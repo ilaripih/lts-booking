@@ -278,10 +278,6 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 	postalCode := m["postal_code"].(string)
 	phoneNumber := m["phone_number"].(string)
 
-	sess, err := store.Get(r, "user")
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
 	sess.Values["name"] = name
 	sess.Values["email"] = email
 	sess.Values["street_address"] = streetAddress
@@ -293,14 +289,47 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 	defer s.Close()
 	c := s.DB("").C("users")
 
-	err = c.Update(bson.M{"username": sess.Values["username"]}, bson.M{"$set": bson.M{
+	if err := c.Update(bson.M{"username": sess.Values["username"]}, bson.M{"$set": bson.M{
 		"name": name,
 		"email": email,
 		"street_address": streetAddress,
 		"postal_code": postalCode,
 		"phone_number": phoneNumber,
-	}})
+	}}); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func updateUserPasswordHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	currentPassword := m["current_password"].(string)
+	newPassword := m["new_password"].(string)
+
+	if len(newPassword) < 8 {
+		return http.StatusBadRequest, errors.New("short_password")
+	}
+
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+
+	var user bson.M
+	if err := c.Find(bson.M{"username": sess.Values["username"]}).One(&user); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if !checkPasswordHash(currentPassword, user["password"].(string)) {
+		return http.StatusUnauthorized, errors.New("invalid_current_password")
+	}
+
+	hashedPassword, err := hashPassword(newPassword)
 	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := c.Update(bson.M{"username": sess.Values["username"]}, bson.M{
+		"$set": bson.M{"password": hashedPassword},
+	}); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -725,6 +754,8 @@ func main() {
 	http.HandleFunc("/api/book_court", myHandler(bookHandler, "user",
 		"court_id", "date", "time_begin", "time_end"))
 	http.HandleFunc("/api/cancel_booking", myHandler(cancelBookingHandler, "user", "_id"))
+	http.HandleFunc("/api/update_user_password", myHandler(updateUserPasswordHandler, "user",
+		"current_password", "new_password"))
 
 	port := os.Getenv("LTS_BOOKING_PORT")
 	if port != "" {

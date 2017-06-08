@@ -57,6 +57,11 @@
 		"cancel_success": "Varaus peruutettiin onnistuneesti",
 		"cancel_error": "Varausta ei voitu peruuttaa",
 		"customer": "Asiakas",
-		"court_delete_confirm": "Haluatko varmasti poistaa kentän?"
+		"court_delete_confirm": "Haluatko varmasti poistaa kentän?",
+		"change_password": "Vaihda salasana",
+		"current_password": "Nykyinen salasana",
+		"new_password": "Uusi salasana",
+		"password_updated": "Salasana päivitettiin onnistuneesti",
+		"invalid_current_password": "Väärä nykyinen salasana"
 	}
 }

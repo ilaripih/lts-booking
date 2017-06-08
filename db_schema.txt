@@ -2,7 +2,6 @@ LTS Calendar database schema
 
 TODO:
 
-* Users can change their password
 * Admin can mark booking as paid
 * Show own bookings also in calendar
 * Don't remove courts permanently
@@ -28,6 +27,7 @@ DONE:
 * TLS
 * Admin can cancel bookings any time
 * Optimized deployment
+* Users can change their password
 
 db.users.createIndex({username: 1}, {unique: true});
 db.courts.createIndex({name: 1}, {unique: true});
