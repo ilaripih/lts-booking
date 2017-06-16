@@ -1,0 +1,246 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/vaadin-date-picker/vaadin-date-picker.html">
+<link rel="import" href="./config-behavior.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="lts-calendar">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      vaadin-date-picker {
+        max-width: 26.3em;
+      }
+
+      th, td {
+        padding: 0 4px;
+        text-align: center;
+        border-left: 1px solid grey;
+        border-right: 1px solid grey;
+      }
+
+      tr:first-child {
+        border-top: 1px solid grey;
+      }
+
+      tr:nth-child(even), td:not(:first-child) {
+        border-bottom: 1px solid grey;
+      }
+
+      td:not(:first-child):not([data-court-id]) {
+        background-color: #d8d8d8;
+      }
+
+      tr:nth-child(even) label {
+        visibility: hidden;
+      }
+
+      i {
+        font-size: 0.8em;
+      }
+    </style>
+
+    <div class="card">
+      <h1>[[localize('calendar')]]</h1>
+
+      <template is="dom-if" if="[[error]]">
+        <p class="alert-error">[[localize(error)]]</p>
+      </template>
+
+      <vaadin-date-picker id="date" i18n="[[_dateLocale(localize)]]" auto-validate label="[[localize('date')]]" value="{{date}}"></vaadin-date-picker>
+
+      <table>
+        <thead>
+          <tr>
+            <th>[[localize('time')]]</th>
+            <template is="dom-repeat" items="[[courts]]">
+              <th>[[item.name]]</th>
+            </template>
+          </tr>
+        </thead>
+        <tbody>
+          <template is="dom-repeat" items="[[grid]]" as="timeslot">
+            <tr>
+              <td>
+                <label>[[_intToTime(timeslot.time)]]</label>
+              </td>
+              <template is="dom-repeat" items="[[timeslot.available]]" as="bookingCell">
+                <td data-court-id$="[[bookingCell.court_id]]">
+                  <template is="dom-if" if="[[bookingCell.court_id]]">
+                    <a href="/book/[[bookingCell.court_id]]/[[date]]/[[timeslot.time]]">[[localize('book')]]</a>
+                  </template>
+                  <template is="dom-if" if="[[bookingCell.title]]">
+                    <i>[[bookingCell.title]]</i>
+                  </template>
+                </td>
+              </template>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+    <iron-ajax
+      id="bookingsAjax"
+      auto
+      url="/api/bookings"
+      body="{{options}}"
+      method="post"
+      content-type="application/json"
+      handle-as="json"
+      last-response="{{bookings}}">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsCalendar extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-calendar'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          date: {
+            type: String,
+            value: ConfigImpl._pickerDate()
+          },
+          options: {
+            type: Object,
+            computed: 'computeOptions(date)'
+          },
+          courts: Array,
+          bookings: Array,
+          grid: {
+            type: Array,
+            computed: 'computeGrid(date, courts.*, bookings)'
+          }
+        }, ConfigImpl.properties);
+      }
+
+      static get observers() {
+        return [
+          '_routeChanged(route)'
+        ];
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.$.date.shadowRoot.querySelector('#clear').style.visibility = 'hidden';
+      }
+
+      _routeChanged(route) {
+        if (route.prefix == '/calendar' && route.path == '') {
+          this.$.bookingsAjax.generateRequest();
+        }
+      }
+
+      computeOptions(date) {
+        if (!date) {
+          return {};
+        }
+        return {
+          date_begin: date,
+          date_end: date
+        };
+      }
+
+      computeGrid(date, courtsChange, bookings) {
+        if (bookings === undefined) {
+          return;
+        }
+
+        var courts = courtsChange.base;
+        var ts = new Date(date);
+        var day = ts.getDay();
+        var dayStr = 'week_days';
+        if (day == 6) {
+          dayStr = 'saturday';
+        } else if (day == 0) {
+          dayStr = 'sunday';
+        }
+
+        var begin = _.min(courts.map(function(court) {
+          return court[dayStr + '_open'];
+        }));
+        var end = _.max(courts.map(function(court) {
+          return court[dayStr + '_close'];
+        }));
+
+        var booked = {};
+        if (bookings) {
+          bookings.forEach(function(booking) {
+            var bBegin = new Date(booking.begin);
+            var bEnd = new Date(booking.end);
+            var range = [
+              (bBegin.getHours() * 60) + bBegin.getMinutes(),
+              (bEnd.getHours() * 60) + bEnd.getMinutes()
+            ];
+            if (booking.court_id in booked) {
+              booked[booking.court_id].push({
+                range: range,
+                title: booking.title
+              });
+            } else {
+              booked[booking.court_id] = [{
+                range: range,
+                title: booking.title
+              }];
+            }
+          });
+        }
+        var today = new Date();
+        var nowTime = 0;
+        if (ts.toLocaleDateString() == today.toLocaleDateString()) {
+          nowTime = this._getMinutes(today);
+        }
+        today.setHours(0);
+        today.setMinutes(0);
+        today.setSeconds(0);
+
+        var ret = [];
+        for (var t = begin; t <= end - 30; t += 30) {
+          var available = courts.map(function(court) {
+            // Court closed?
+            if (t < court[dayStr + '_open'] || t >= court[dayStr + '_close']) {
+              return null;
+            }
+
+            // In the past?
+            if (ts < today || t < nowTime) {
+              return null;
+            }
+
+            // Court booked?
+            var bookedObj = _.find(booked[court._id], function(obj) {
+              return obj.range[0] < t + 30 && t < obj.range[1];
+            });
+            if (bookedObj) {
+              return {
+                title: bookedObj.title
+              };
+            }
+
+            return {
+              court_id: court._id
+            };
+          });
+
+          ret.push({
+            time: t,
+            available: available
+          });
+        }
+
+        return ret;
+      }
+    }
+
+    window.customElements.define(LtsCalendar.is, LtsCalendar);
+  </script>
+</dom-module>

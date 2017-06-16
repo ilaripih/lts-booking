@@ -1,0 +1,100 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="./config-behavior.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="lts-courts">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      paper-fab {
+        position: fixed;
+        right: 25px;
+        bottom: 30px;
+      }
+    </style>
+
+    <div class="card">
+      <div id="authenticated">
+        <h1>[[localize('courts')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+
+        <template is="dom-repeat" items="[[courts]]">
+          <div>
+            <a href="/court/[[item._id]]">[[item.name]]</a>
+            <paper-icon-button data-index$="[[index]]" data-db-id$="[[item._id]]" icon="delete" on-tap="deleteCourt"></paper-icon-button>
+          </div>
+        </template>
+
+        <a href="court/new">
+          <paper-fab icon="add"></paper-fab>
+        </a>
+      </div>
+    </div>
+
+    <iron-ajax
+      id="deleteCourtAjax"
+      url="/api/delete_court"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleDeleteCourtResponse"
+      on-error="handleDeleteCourtError">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsCourts extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-courts'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          courts: {
+            type: Array,
+            notify: true
+          }
+        }, ConfigImpl.properties);
+      }
+
+      deleteCourt(event) {
+        if (!confirm(this.localize('court_delete_confirm'))) {
+          return;
+        }
+
+        this.courtToDelete = event.target.dataset.index;
+        this.$.deleteCourtAjax.body = {
+          _id: event.target.dataset.dbId
+        };
+        this.$.deleteCourtAjax.generateRequest();
+      }
+
+      handleDeleteCourtError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      handleDeleteCourtResponse(event) {
+        this.error = '';
+
+        this.splice('courts', this.courtToDelete, 1);
+        this.courtToDelete = null;
+      }
+    }
+
+    window.customElements.define(LtsCourts.is, LtsCourts);
+  </script>
+</dom-module>

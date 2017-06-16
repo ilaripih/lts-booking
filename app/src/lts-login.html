@@ -1,0 +1,154 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="./config-behavior.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="lts-login">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      .wrapper-btns {
+        margin-top: 15px;
+      }
+
+      paper-button.link {
+        color: #757575;
+      }
+    </style>
+
+    <div class="card">
+      <div id="unauthenticated">
+        <h1>[[localize('login_or_sign_up')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+
+        <div id="inputs">
+          <paper-input id="username" type="text" label="[[localize('username')]]" value="{{formData.username}}" required auto-validate invalid="{{invalid.username}}"></paper-input>
+          <paper-input id="password" type="password" label="[[localize('password')]]" value="{{formData.password}}" required auto-validate minlength="8" invalid="{{invalid.password}}"></paper-input>
+        </div>
+        <div class="wrapper-btns">
+          <paper-button raised class="primary" on-tap="postLogin">[[localize('login')]]</paper-button>
+          <paper-button class="link" on-tap="postRegister">[[localize('sign_up')]]</paper-button>
+        </div>
+      </div>
+    </div>
+
+    <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="postLogin"></iron-a11y-keys>
+    <iron-ajax
+      id="registerLoginAjax"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleUserResponse"
+      on-error="handleUserError">
+    </iron-ajax>
+    <app-location route="{{route}}"></app-location>
+  </template>
+
+  <script>
+    class LtsLogin extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-login'; }
+
+      static get properties() {
+        return _.defaults({
+          formData: {
+            type: Object,
+            value: {}
+          },
+          user: {
+            type: Object,
+            notify: true
+          },
+          error: String,
+          invalid: {
+            type: Object,
+            value: {}
+          }
+        }, ConfigImpl.properties);
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.$.a11y.target = this.$.inputs;
+      }
+
+      _setReqBody() {
+        this.$.registerLoginAjax.body = this.formData;
+      }
+
+      postLogin() {
+        if (!this._isValid()) {
+          this.error = 'missing_parameter';
+          return;
+        }
+
+        this.$.registerLoginAjax.url = '/api/login';
+        this._setReqBody();
+        this.$.registerLoginAjax.generateRequest();
+      }
+
+      postRegister() {
+        if (!this._isValid()) {
+          this.error = 'missing_parameter';
+          return;
+        }
+
+        this.$.registerLoginAjax.url = '/api/signup';
+        this._setReqBody();
+        this.$.registerLoginAjax.generateRequest();
+      }
+
+      _isValid() {
+        for (var key in this.invalid) {
+          if (this.invalid[key]) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      _userDetailsMissing(user) {
+        return !user.name || !user.street_address ||
+          !user.postal_code || !user.phone_number;
+      }
+
+      handleUserResponse(event) {
+        this.error = '';
+        this.formData = {};
+        this.user = JSON.parse(event.detail.response);
+
+        if (this._userDetailsMissing(this.user)) {
+          this.set('route.path', '/settings');
+        } else if (this.route.path == '/login') {
+          this.set('route.path', '/calendar');
+        }
+      }
+
+      handleUserError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+      }
+    }
+
+    window.customElements.define(LtsLogin.is, LtsLogin);
+  </script>
+</dom-module>

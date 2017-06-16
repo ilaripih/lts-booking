@@ -1,0 +1,249 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="./config-behavior.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="lts-court">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      .wrapper-btns {
+        margin-top: 15px;
+      }
+
+      .availability {
+        margin-top: 10px;
+      }
+
+      .availability label {
+        display: block;
+      }
+
+      .availability paper-input {
+        display: inline-block;
+        margin-top: 0;
+        width: 60px;
+      }
+
+      paper-button.link {
+        color: #757575;
+      }
+    </style>
+
+    <app-location route="{{rootRoute}}"></app-location>
+    <app-route
+      route="{{route}}"
+      pattern="/:court_id"
+      data="{{routeData}}"></app-route>
+    <div class="card">
+      <div id="authenticated">
+        <template is="dom-if" if="[[newCourt]]">
+          <h1>[[localize('new_court')]]</h1>
+        </template>
+        <template is="dom-if" if="[[!newCourt]]">
+          <h1>[[localize('edit_court')]]</h1>
+        </template>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+
+        <paper-input id="name" type="text" label="[[localize('name')]]" value="{{formData.name}}" required auto-validate invalid="{{invalid.name}}"></paper-input>
+        <div class="availability">
+          <label>[[localize('available_week_days')]]</label>
+          <paper-input id="weekDaysOpen" type="text" maxlength="5" minlength="5" label="" value="{{formData.week_days_open}}" required auto-validate invalid="{{invalid.week_days_open}}"></paper-input>
+          <span> _ </span>
+          <paper-input id="weekDaysClose" type="text" maxlength="5" minlength="5" label="" value="{{formData.week_days_close}}" required auto-validate invalid="{{invalid.week_days_close}}"></paper-input>
+        </div>
+        <div class="availability">
+          <label>[[localize('available_saturday')]]</label>
+          <paper-input id="saturdayOpen" type="text" maxlength="5" minlength="5" label="" value="{{formData.saturday_open}}" required auto-validate invalid="{{invalid.saturday_open}}"></paper-input>
+          <span> _ </span>
+          <paper-input id="saturdayClose" type="text" maxlength="5" minlength="5" label="" value="{{formData.saturday_close}}" required auto-validate invalid="{{invalid.saturday_close}}"></paper-input>
+        </div>
+        <div class="availability">
+          <label>[[localize('available_sunday')]]</label>
+          <paper-input id="sundayOpen" type="text" maxlength="5" minlength="5" label="" value="{{formData.sunday_open}}" required auto-validate invalid="{{invalid.sunday_open}}"></paper-input>
+          <span> _ </span>
+          <paper-input id="sundayClose" type="text" maxlength="5" minlength="5" label="" value="{{formData.sunday_close}}" required auto-validate invalid="{{invalid.sunday_close}}"></paper-input>
+        </div>
+
+        <div class="wrapper-btns">
+          <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+          <paper-button class="link" on-tap="cancel">[[localize('cancel')]]</paper-button>
+        </div>
+      </div>
+    </div>
+
+    <iron-ajax
+      id="saveAjax"
+      url="/api/save_court"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSaveResponse"
+      on-error="handleSaveError">
+    </iron-ajax>
+    <iron-ajax
+      id="getAjax"
+      url="/api/court"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleGetResponse"
+      on-error="handleGetError">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsCourt extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-court'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          formData: {
+            type: Object,
+            value: {}
+          },
+          invalid: {
+            type: Object,
+            value: {}
+          },
+          newCourt: {
+            type: Boolean,
+            value: true
+          },
+          _id: {
+            type: String,
+            computed: 'computeId(routeData.court_id)'
+          },
+          courts: {
+            type: Array,
+            notify: true
+          }
+        }, ConfigImpl.properties);
+      }
+
+      static get observers() {
+        return [
+          '_idChanged(_id)'
+        ];
+      }
+
+      computeId(courtId) {
+        return courtId;
+      }
+
+      _idChanged(_id) {
+        this.newCourt = (_id == 'new');
+        
+        if (_id && !this.newCourt) {
+          this.$.getAjax.body = {
+            _id: _id
+          };
+          this.$.getAjax.generateRequest();
+        } else if (this.newCourt) {
+          this.error = '';
+          this.formData = {};
+        }
+      }
+
+      _reqBody() {
+        var data = {
+          _id: this._id,
+          name: this.formData.name
+        };
+        for (var key in this.formData) {
+          if (key != 'name') {
+            data[key] = this._parseTime(this.formData[key]);
+          }
+        }
+
+        return data;
+      }
+
+      _isValid() {
+        for (var key in this.invalid) {
+          if (this.invalid[key]) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      postSave() {
+        if (!this._isValid()) {
+          this.error = 'missing_parameter';
+          return;
+        }
+
+        this.$.saveAjax.body = this._reqBody();
+        this.$.saveAjax.generateRequest();
+      }
+
+      handleSaveError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      handleSaveResponse(event) {
+        this.error = '';
+        var resp = JSON.parse(event.detail.response);
+        var court = _.defaults({
+          _id: resp._id
+        }, this._reqBody());
+
+        if (this.newCourt) {
+          if (this.courts) {
+            this.push('courts', court);
+          } else {
+            this.courts = [court];
+          }
+        } else {
+          var index = _.findIndex(this.courts, function(obj) {
+            return obj._id == resp._id;
+          });
+          this.set('courts.' + index, court);
+        }
+
+        this.set('rootRoute.path', '/courts');
+      }
+
+      handleGetError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      handleGetResponse(event) {
+        this.error = '';
+        var resp = JSON.parse(event.detail.response);
+
+        this.set('formData.name', resp.name);
+        this.set('formData.week_days_open', this._intToTime(resp.week_days_open));
+        this.set('formData.week_days_close', this._intToTime(resp.week_days_close));
+        this.set('formData.saturday_open', this._intToTime(resp.saturday_open));
+        this.set('formData.saturday_close', this._intToTime(resp.saturday_close));
+        this.set('formData.sunday_open', this._intToTime(resp.sunday_open));
+        this.set('formData.sunday_close', this._intToTime(resp.sunday_close));
+      }
+
+      cancel() {
+        this.set('rootRoute.path', '/courts');
+      }
+    }
+
+    window.customElements.define(LtsCourt.is, LtsCourt);
+  </script>
+</dom-module>

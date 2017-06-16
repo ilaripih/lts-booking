@@ -1,0 +1,195 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="./config-behavior.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="lts-my-bookings">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      table {
+        border-collapse: collapse;
+      }
+
+      th, td {
+        padding: 0 8px;
+        text-align: left;
+        border: 1px solid grey;
+      }
+
+      tbody tr:nth-child(odd) {
+        background-color: #edf3fc;
+      }
+
+      paper-button {
+        top: -4px;
+        color: white;
+        background-color: red;
+        height: 0.5em;
+        font-size: 0.8em;
+      }
+    </style>
+
+    <div class="card">
+      <div id="authenticated">
+        <h1>[[localize('my_bookings')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+        <template is="dom-if" if="[[success]]">
+          <p class="alert-success">[[localize(success)]]</p>
+        </template>
+
+        <table>
+          <thead>
+            <tr>
+              <th>[[localize('time')]]</th>
+              <th>[[localize('court')]]</th>
+              <template is="dom-if" if="[[isadmin]]">
+                <th>[[localize('customer')]]</th>
+              </template>
+              <th>[[localize('cancel')]]</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template is="dom-repeat" items="[[bookings]]" as="booking">
+              <tr>
+                <td>[[_bookingTimes(booking.begin, booking.end)]]</td>
+                <td>[[_courtName(booking.court_id)]]</td>
+                <template is="dom-if" if="[[isadmin]]">
+                  <td>[[booking.title]]</td>
+                </template>
+                <td>
+                  <template is="dom-if" if="[[_canCancel(booking.begin)]]">
+                    <paper-button raised on-tap="cancel" data-index$="[[index]]" data-db-id$="[[booking._id]]">[[localize('cancel')]]</paper-button>
+                  </template>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <iron-ajax
+      id="bookingsAjax"
+      auto
+      url="/api/bookings"
+      method="post"
+      content-type="application/json"
+      body="{{options}}"
+      handle-as="json"
+      last-response="{{bookings}}">
+    </iron-ajax>
+    <iron-ajax
+      id="cancelAjax"
+      url="/api/cancel_booking"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-error="handleCancelError"
+      on-response="handleCancelResponse">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsMyBookings extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-my-bookings'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          success: String,
+          isadmin: {
+            type: Boolean,
+            value: false
+          },
+          options: {
+            type: Object,
+            value: {
+              date_begin: '2017-06-01',
+              date_end: '2099-06-01',
+              my_bookings: true,
+              sort_desc: true
+            }
+          },
+          courts: Array,
+          bookings: Array
+        }, ConfigImpl.properties);
+      }
+
+      static get observers() {
+        return [
+          '_routeChanged(route)'
+        ];
+      }
+
+      _routeChanged(route) {
+        if (route.prefix == '/my-bookings' && route.path == '') {
+          this.$.bookingsAjax.generateRequest();
+        }
+      }
+
+      _courtName(courtId) {
+        var court = _.find(this.courts, function(obj) {
+          return obj._id == courtId;
+        });
+        if (court) {
+          return court.name;
+        }
+        return '?';
+      }
+
+      _canCancel(beginStr) {
+        var begin = new Date(beginStr);
+        var now = new Date();
+        var diff = (begin - now) / 3600000;
+        if (this.isadmin) {
+          return diff > 0;
+        }
+        return diff > 8;
+      }
+
+      cancel(event) {
+        if (!confirm(this.localize('book_cancel_confirm'))) {
+          return;
+        }
+
+        var id = event.target.dataset.dbId;
+        this.bookingToCancel = event.target.dataset.index;
+        this.$.cancelAjax.body = {_id: id};
+        this.$.cancelAjax.generateRequest();
+      }
+
+      handleCancelError(event) {
+        this.success = '';
+        var msg = event.detail.request.xhr.response.trim();
+        if (msg == 'not found') {
+          this.error = 'cancel_error';
+        } else {
+          this.error = msg;
+        }
+      }
+
+      handleCancelResponse(event) {
+        this.error = '';
+        this.success = 'cancel_success';
+
+        this.splice('bookings', this.bookingToCancel, 1);
+        this.bookingToCancel = null;
+      }
+    }
+
+    window.customElements.define(LtsMyBookings.is, LtsMyBookings);
+  </script>
+</dom-module>

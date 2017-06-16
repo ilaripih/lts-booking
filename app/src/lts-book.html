@@ -1,0 +1,289 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="./config-behavior.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="lts-book">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      .wrapper-btns {
+        margin-top: 15px;
+      }
+
+      .valid {
+        color: green;
+      }
+
+      .invalid {
+        color: red;
+      }
+
+      paper-button.link {
+        color: #757575;
+      }
+
+      td {
+        padding-right: 15px;
+      }
+
+      td:first-child {
+        font-weight: bold;
+      }
+
+      paper-listbox {
+        overflow-x: hidden;
+      }
+
+      paper-item {
+        width: 100%;
+      }
+    </style>
+
+    <app-location route="{{rootRoute}}"></app-location>
+    <app-route
+      route="{{route}}"
+      pattern="/:court_id/:date/:time_begin"
+      data="{{routeData}}"></app-route>
+    <div class="card">
+      <div id="authenticated">
+        <h1>[[localize('book_court')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+        <template is="dom-if" if="[[success]]">
+          <p class="alert-success">[[localize(success)]]</p>
+        </template>
+
+        <table>
+          <tbody>
+            <tr>
+              <td>[[localize('court')]]</td>
+              <td>[[court.name]]</td>
+            </tr>
+            <tr>
+              <td>[[localize('date')]]</td>
+              <td>[[_formatDate(routeData.date)]]</td>
+            </tr>
+            <tr>
+              <td>[[localize('time')]]</td>
+              <td class$="[[timeClass]]">[[_intToTime(routeData.time_begin)]] - [[_intToTime(timeEnd)]]</td>
+            </tr>
+            <tr>
+              <td colspan="2">
+                <paper-dropdown-menu label="[[localize('duration')]]" value="{{duration}}">
+                  <paper-listbox slot="dropdown-content" selected="[[durationIndex]]">
+                    <template is="dom-repeat" items="[[durationOptions]]">
+                      <paper-item>[[item.label]]</paper-item>
+                    </template>
+                  </paper-listbox>
+                </paper-dropdown-menu>
+              </td>
+            </tr>
+            <template is="dom-if" if="[[isadmin]]">
+              <tr>
+                <td colspan="2">
+                  <paper-input id="title" type="text" label="[[localize('customer')]]" value="{{title}}"></paper-input>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+
+        <div class="wrapper-btns">
+          <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+          <paper-button class="link" on-tap="cancel">[[localize('cancel')]]</paper-button>
+        </div>
+      </div>
+    </div>
+
+    <iron-ajax
+      id="saveAjax"
+      url="/api/book_court"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSaveResponse"
+      on-error="handleSaveError">
+    </iron-ajax>
+    <iron-ajax
+      id="bookingsAjax"
+      url="/api/bookings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleBookingsResponse"
+      on-error="handleBookingsError">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsBook extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-book'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          success: String,
+          isadmin: {
+            type: Boolean,
+            value: false
+          },
+          courts: {
+            type: Array,
+            value: []
+          },
+          timeClass: {
+            type: String,
+            value: 'valid'
+          },
+          timeEnd: {
+            type: Number,
+            computed: 'computeTimeEnd(routeData.time_begin, duration)'
+          },
+          durationOptions: {
+            type: Array,
+            value: []
+          },
+          durationIndex: {
+            type: Number,
+            value: 0
+          }
+        }, ConfigImpl.properties);
+      }
+
+      static get observers() {
+        return [
+          '_routeDataChanged(routeData)'
+        ];
+      }
+
+      _routeDataChanged(routeData) {
+        if (!routeData) {
+          return;
+        }
+        this.error = '';
+        this.success = '';
+
+        this.durationIndex = 0;
+        this.durationOptions = [];
+        this.title = '';
+
+        this.$.bookingsAjax.body = {
+          court_id: routeData.court_id,
+          date_begin: routeData.date,
+          date_end: routeData.date
+        };
+        this.$.bookingsAjax.generateRequest();
+      }
+
+      handleBookingsResponse(event) {
+        this.error = '';
+        var bookings = JSON.parse(event.detail.response);
+        
+        this.court = _.find(this.courts, function(obj) {
+          return obj._id == this.routeData.court_id;
+        }.bind(this));
+
+        var ts = new Date(this.routeData.date);
+        var day = ts.getDay();
+        var dayStr = 'week_days';
+        if (day == 6) {
+          dayStr = 'saturday';
+        } else if (day == 0) {
+          dayStr = 'sunday';
+        }
+        var begin = Math.max(this.court[dayStr + '_open'], this.routeData.time_begin);
+        var end = this.court[dayStr + '_close'];
+
+        var booked = [];
+        if (bookings) {
+          bookings.forEach(function(booking) {
+            var bBegin = new Date(booking.begin);
+            booked.push((bBegin.getHours() * 60) + bBegin.getMinutes());
+          });
+        }
+
+        var opts = [];
+        for (var t = begin + 30; t <= end; t += 30) {
+          // Court booked?
+          if (_.find(booked, function(bBegin) {
+            return bBegin < t && bBegin >= begin;
+          })) {
+            break;
+          }
+
+          opts.push({
+            value: t - begin,
+            label: this._intToDuration(t - begin)
+          });
+        }
+        this.durationOptions = opts;
+        if (opts.length > 1) {
+          this.durationIndex = 1;
+        }
+      }
+
+      computeTimeEnd(timeBegin, duration) {
+        if (!timeBegin || !duration) {
+          return 0;
+        }
+        return parseInt(timeBegin) + this._parseDuration(duration);
+      }
+
+      cancel() {
+        this.set('rootRoute.path', '/calendar');
+      }
+
+      postSave() {
+        var data = {
+          court_id: this.routeData.court_id,
+          date: this.routeData.date,
+          time_begin: parseInt(this.routeData.time_begin),
+          time_end: this.timeEnd
+        };
+        if (this.title.length > 0) {
+          data.title = this.title;
+        }
+
+        this.$.saveAjax.body = data;
+        this.$.saveAjax.generateRequest();
+      }
+
+      handleSaveError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      handleSaveResponse(event) {
+        this.error = '';
+        this.success = 'booking_success';
+      }
+
+      handleBookingsError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+    }
+
+    window.customElements.define(LtsBook.is, LtsBook);
+  </script>
+</dom-module>

@@ -1,0 +1,162 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-localize-behavior/app-localize-behavior.html">
+<script src="../bower_components/sugar/dist/sugar.min.js"></script>
+<script src="../bower_components/sugar/dist/locales/fi.js"></script>
+
+<script>
+  Sugar.Date.setLocale('fi');
+  ConfigImpl = {
+    properties: {
+      language: {
+        type: String,
+        value: 'fi'
+      },
+      useKeyIfMissing: {
+        type: Boolean,
+        value: true
+      }
+    },
+    attached: function() {
+      this.loadResources(this.resolveUrl('locales.json'));
+    },
+    _padToTwo: function(number) {
+      if (number <= 99) {
+        number = ('0' + number).slice(-2);
+      }
+      return number;
+    },
+    _parseTime: function(timeStr) {
+      if (!timeStr) {
+        return null;
+      }
+      var parts = timeStr.trim().split(':');
+      return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
+    },
+    _intToTime: function(timeInt) {
+      var hours = parseInt(timeInt / 60);
+      var minutes = timeInt - (hours * 60);
+      var ret = this._padToTwo(hours) + ':' + this._padToTwo(minutes);
+      return ret;
+    },
+    _intToDuration: function(durationInt) {
+      var hours = parseInt(durationInt / 60);
+      var minutes = durationInt - (hours * 60);
+
+      var ret = [];
+      if (hours > 0) {
+        ret.push(hours + 'h');
+      }
+      if (minutes) {
+        ret.push(minutes + 'min')
+      }
+
+      return ret.join(' ');
+    },
+    _parseDuration: function(durationStr) {
+      var parts = durationStr.split(' ');
+      var ret = parseInt(parts[0]);
+      if (parts.length > 1) {
+        return (ret * 60) + parseInt(parts[1]);
+      }
+      if (_.endsWith(parts[0], 'min')) {
+        return ret;
+      }
+      return ret * 60;
+    },
+    _getMinutes: function(ts) {
+      if (!ts) {
+        ts = new Date();
+      }
+      try {
+        var s = ts.toLocaleString('fi-FI', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Europe/Helsinki'
+        });
+        var parts = s.split('.');
+        return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
+      } catch (e) {
+        return (ts.getHours() * 60) + ts.getMinutes();
+      }
+    },
+    _monthNames: function(localize) {
+      var names = localize('monthnames_list');
+      if (!names) {
+        return null;
+      }
+      return names.split('_');
+    },
+    _weekDays: function(localize) {
+      var days = localize('weekdays_list');
+      if (!days) {
+        return null;
+      }
+      return days.split('_');
+    },
+    _weekDaysShort: function(localize) {
+      var days = localize('weekdays_short_list');
+      if (!days) {
+        return null;
+      }
+      return days.split('_');
+    },
+    _formatDate: function(date) {
+      if (typeof date == 'string') {
+        date = new Date(date);
+      }
+      return Sugar.Date.format(date, '{short}');
+    },
+    _dateLocale: function(localize) {
+      return {
+        week: localize('week'),
+        calendar: localize('calendar'),
+        clear: localize('clear'),
+        today: localize('today'),
+        cancel: localize('cancel'),
+        firstDayOfWeek: 1,
+        monthNames: ConfigImpl._monthNames(localize),
+        weekdays: ConfigImpl._weekDays(localize),
+        weekdaysShort: ConfigImpl._weekDaysShort(localize),
+        formatDate: function(date) {
+          return Sugar.Date.format(date, '{short}');
+        },
+        formatTitle: function(monthName, fullYear) {
+          return monthName + ' ' + fullYear;
+        },
+        parseDate: function(dateString) {
+          var matches = ConfigImpl._monthNames(localize).filter(function(monthName) {
+            return monthName.toLowerCase().startsWith(dateString.trim().toLowerCase());
+          });
+          dateString = matches.length === 1 ? matches[0] : dateString;
+          // Parse the date
+          return Sugar.Date.create(dateString);
+        }
+      }
+    },
+    _pickerDate: function(ts) {
+      if (!ts) {
+        ts = new Date();
+      }
+      var dd = ts.getDate();
+      var mm = ts.getMonth() + 1;
+      var yyyy = ts.getFullYear();
+      if (dd < 10) {
+        dd = '0' + dd;
+      }
+      if (mm < 10) {
+        mm = '0' + mm;
+      }
+      return yyyy + '-' + mm + '-' + dd;
+    },
+    _bookingTimes: function(beginStr, endStr) {
+      var begin = new Date(beginStr);
+      var end = new Date(endStr);
+      var str = ConfigImpl._formatDate(begin);
+      str += ' ' + ConfigImpl._intToTime(ConfigImpl._getMinutes(begin));
+      str += ' - ' + ConfigImpl._intToTime(ConfigImpl._getMinutes(end));
+      return str;
+    }
+  };
+  ConfigBehavior = [ConfigImpl, Polymer.AppLocalizeBehavior]; 
+</script>

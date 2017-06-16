@@ -1,0 +1,30 @@
+{
+  "entrypoint": "index.html",
+  "shell": "src/lts-booking.html",
+  "fragments": [
+    "src/config-behavior.html",
+    "src/lts-book.html",
+    "src/lts-calendar.html",
+    "src/lts-court.html",
+    "src/lts-courts.html",
+    "src/lts-login.html",
+    "src/lts-my-bookings.html",
+    "src/lts-settings.html",
+    "src/lts-view404.html",
+    "src/my-icons.html",
+    "src/shared-styles.html"
+  ],
+  "sources": [
+    "src/**/*",
+    "images/**/*",
+    "bower.json"
+  ],
+  "extraDependencies": [
+    "manifest.json",
+    "src/locales.json",
+    "bower_components/webcomponentsjs/*.js"
+  ],
+  "lint": {
+    "rules": ["polymer-2"]
+  }
+}

@@ -1,0 +1,157 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="./config-behavior.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="lts-settings">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      .wrapper-btns {
+        margin-top: 15px;
+      }
+
+      paper-button.link {
+        color: #757575;
+      }
+    </style>
+
+    <div class="card">
+      <div id="authenticated">
+        <h1>[[localize('settings')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+        <template is="dom-if" if="[[success]]">
+          <p class="alert-success">[[localize(success)]]</p>
+        </template>
+
+        <paper-input id="name" type="text" label="[[localize('name')]]" value="{{formData.name}}" required auto-validate invalid="{{invalid.name}}"></paper-input>
+        <paper-input id="email" type="email" label="[[localize('email')]]" value="{{formData.email}}" required auto-validate invalid="{{invalid.email}}"></paper-input>
+        <paper-input id="street_address" type="text" label="[[localize('street_address')]]" value="{{formData.street_address}}" required auto-validate invalid="{{invalid.street_address}}"></paper-input>
+        <paper-input id="postal_code" type="text" label="[[localize('postal_code')]]" value="{{formData.postal_code}}" required auto-validate invalid="{{invalid.postal_code}}"></paper-input>
+        <paper-input id="phone_number" type="text" label="[[localize('phone_number')]]" value="{{formData.phone_number}}" required auto-validate invalid="{{invalid.phone_number}}"></paper-input>
+
+        <div class="wrapper-btns">
+          <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+        </div>
+      </div>
+    </div>
+    <iron-ajax
+      id="saveAjax"
+      url="/api/update_user_data"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSaveResponse"
+      on-error="handleSaveError">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsSettings extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-settings'; }
+
+      static get properties() {
+        return _.defaults({
+          formData: {
+            type: Object,
+            value: {}
+          },
+          user: {
+            type: Object,
+            notify: true
+          },
+          error: String,
+          success: String,
+          invalid: {
+            type: Object,
+            value: {}
+          }
+        }, ConfigImpl.properties);
+      }
+
+      static get observers() {
+        return [
+          '_userChanged(user)'
+        ];
+      }
+
+      _userChanged(user) {
+        if (!user) {
+          this.formData = {};
+          return;
+        }
+
+        this.set('formData.name', user.name);
+        this.set('formData.email', user.email);
+        this.set('formData.street_address', user.street_address);
+        this.set('formData.postal_code', user.postal_code);
+        this.set('formData.phone_number', user.phone_number);
+      }
+
+      _setReqBody() {
+        this.$.saveAjax.body = this.formData;
+      }
+
+      _isValid() {
+        for (var key in this.invalid) {
+          if (this.invalid[key]) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      postSave() {
+        if (!this._isValid()) {
+          this.error = 'missing_parameter';
+          return;
+        }
+
+        this._setReqBody();
+        this.$.saveAjax.generateRequest();
+      }
+
+      handleSaveResponse(event) {
+        this.error = '';
+        this.success = 'user_data_updated';
+        for (var key in this.formData) {
+          this.set('user.' + key, this.formData[key]);
+        }
+      }
+
+      handleSaveError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        
+        if (this.user) {
+          this.formData = {
+            name: this.user.name,
+            email: this.user.email,
+            street_address: this.user.street_address,
+            postal_code: this.user.postal_code,
+            phone_number: this.user.phone_number
+          };
+        }
+      }
+    }
+
+    window.customElements.define(LtsSettings.is, LtsSettings);
+  </script>
+</dom-module>
