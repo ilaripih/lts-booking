@@ -29,7 +29,8 @@
     "paper-listbox": "^2.0.0",
     "paper-item": "^2.0.0",
     "sugar": "^2.0.4",
-    "iron-a11y-keys": "^2.0.0"
+    "iron-a11y-keys": "^2.0.0",
+    "web-animations-js": "^2.2.5"
   },
   "resolutions": {
     "polymer": "^2.0.0-rc.1"

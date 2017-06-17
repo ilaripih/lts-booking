@@ -77,7 +77,12 @@ Copyright (c) 2017 Ilari Pihlajisto
                     <a href="/book/[[bookingCell.court_id]]/[[date]]/[[timeslot.time]]">[[localize('book')]]</a>
                   </template>
                   <template is="dom-if" if="[[bookingCell.title]]">
-                    <i>[[bookingCell.title]]</i>
+                    <template is="dom-if" if="[[bookingCell.username]]">
+                      <a href="/user/[[bookingCell.username]]">[[bookingCell.title]]</a>
+                    </template>
+                    <template is="dom-if" if="[[!bookingCell.username]]">
+                      <i>[[bookingCell.title]]</i>
+                    </template>
                   </template>
                 </td>
               </template>
@@ -181,16 +186,18 @@ Copyright (c) 2017 Ilari Pihlajisto
               (bBegin.getHours() * 60) + bBegin.getMinutes(),
               (bEnd.getHours() * 60) + bEnd.getMinutes()
             ];
+            var bookedObj = {
+              range: range,
+              title: booking.title
+            };
+            if ('username' in booking) {
+              bookedObj.username = booking.username;
+            }
+
             if (booking.court_id in booked) {
-              booked[booking.court_id].push({
-                range: range,
-                title: booking.title
-              });
+              booked[booking.court_id].push(bookedObj);
             } else {
-              booked[booking.court_id] = [{
-                range: range,
-                title: booking.title
-              }];
+              booked[booking.court_id] = [bookedObj];
             }
           });
         }
@@ -221,9 +228,13 @@ Copyright (c) 2017 Ilari Pihlajisto
               return obj.range[0] < t + 30 && t < obj.range[1];
             });
             if (bookedObj) {
-              return {
+              var bookingData = {
                 title: bookedObj.title
               };
+              if ('username' in bookedObj) {
+                bookingData.username = bookedObj.username;
+              }
+              return bookingData;
             }
 
             return {

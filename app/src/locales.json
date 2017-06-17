@@ -62,6 +62,10 @@
 		"current_password": "Nykyinen salasana",
 		"new_password": "Uusi salasana",
 		"password_updated": "Salasana päivitettiin onnistuneesti",
-		"invalid_current_password": "Väärä nykyinen salasana"
+		"invalid_current_password": "Väärä nykyinen salasana",
+		"login_register_help": "Jos sinulla ei ole vielä käyttäjätunnusta, voit luoda sellaisen kirjoittamalla alla oleviin kenttiin tunnuksen ja salasanan ja painamalla Rekisteröidy-nappia.",
+		"user": "Käyttäjä",
+		"user_details": "Käyttäjän tiedot",
+		"bookings": "Varaukset"
 	}
 }

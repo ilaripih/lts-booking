@@ -1,0 +1,180 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="./config-behavior.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="lts-user">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      td:first-child {
+        padding-right: 12px;
+      }
+
+      td, th {
+        text-align: left;
+      }
+    </style>
+
+    <app-route
+      route="{{route}}"
+      pattern="/:username"
+      data="{{routeData}}"></app-route>
+    <div class="card">
+      <div id="authenticated">
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+
+        <h1>[[localize('user_details')]]</h1>
+        <table>
+          <tbody>
+            <tr>
+              <td><strong>[[localize('username')]]</strong></td>
+              <td>[[user.username]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('name')]]</strong></td>
+              <td>[[user.name]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('email')]]</strong></td>
+              <td>[[user.email]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('street_address')]]</strong></td>
+              <td>[[user.street_address]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('postal_code')]]</strong></td>
+              <td>[[user.postal_code]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('phone_number')]]</strong></td>
+              <td>[[user.phone_number]]</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h1>[[localize('bookings')]]</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>[[localize('time')]]</th>
+              <th>[[localize('court')]]</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template is="dom-repeat" items="[[bookings]]" as="booking">
+              <tr>
+                <td>[[_bookingTimes(booking.begin, booking.end)]]</td>
+                <td>[[_courtName(booking.court_id)]]</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <iron-ajax
+      id="userAjax"
+      auto
+      url="/api/user"
+      method="post"
+      body="{{userOptions}}"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleUserResponse"
+      on-error="handleUserError">
+    </iron-ajax>
+    <iron-ajax
+      id="userBookingsAjax"
+      auto
+      url="/api/bookings"
+      method="post"
+      body="{{bookingsOptions}}"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleBookingsResponse"
+      on-error="handleBookingsError">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsUser extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-user'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          userOptions: {
+            type: Object,
+            computed: 'computeUserOptions(routeData.username)'
+          },
+          bookingsOptions: {
+            type: Object,
+            computed: 'computeBookingsOptions(routeData.username)'
+          },
+          user: {
+            type: Object,
+            value: {}
+          },
+          courts: Array
+        }, ConfigImpl.properties);
+      }
+
+      computeUserOptions(username) {
+        return {
+          username: username
+        };
+      }
+
+      computeBookingsOptions(username) {
+        return {
+          username: username,
+          date_begin: '2017-06-01',
+          date_end: '2099-06-01',
+          sort_desc: true
+        };
+      }
+
+      _courtName(courtId) {
+        var court = _.find(this.courts, function(obj) {
+          return obj._id == courtId;
+        });
+        if (court) {
+          return court.name;
+        }
+        return '?';
+      }
+
+      handleUserResponse(event) {
+        this.error = '';
+        this.user = JSON.parse(event.detail.response);
+      }
+
+      handleUserError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      handleBookingsResponse(event) {
+        this.error = '';
+        this.bookings = JSON.parse(event.detail.response);
+      }
+
+      handleBookingsError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+      }
+    }
+
+    window.customElements.define(LtsUser.is, LtsUser);
+  </script>
+</dom-module>

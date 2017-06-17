@@ -670,6 +670,27 @@ func cancelBookingHandler(w http.ResponseWriter, r *http.Request, m map[string]i
 	return http.StatusOK, nil
 }
 
+func userHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	username := m["username"].(string)
+
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+
+	var user User
+	if err := c.Find(bson.M{"username": username}).One(&user); err != nil {
+		return http.StatusNotFound, err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+	if err := encoder.Encode(user); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
 func serveIndex(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, appDir + "/index.html")
 }
@@ -756,6 +777,7 @@ func main() {
 	http.HandleFunc("/api/cancel_booking", myHandler(cancelBookingHandler, "user", "_id"))
 	http.HandleFunc("/api/update_user_password", myHandler(updateUserPasswordHandler, "user",
 		"current_password", "new_password"))
+	http.HandleFunc("/api/user", myHandler(userHandler, "admin", "username"))
 
 	port := os.Getenv("LTS_BOOKING_PORT")
 	if port != "" {

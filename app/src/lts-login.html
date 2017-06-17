@@ -38,6 +38,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <div id="unauthenticated">
         <h1>[[localize('login_or_sign_up')]]</h1>
 
+        <p>[[localize('login_register_help')]]</p>
+
         <template is="dom-if" if="[[error]]">
           <p class="alert-error">[[localize(error)]]</p>
         </template>
