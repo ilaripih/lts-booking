@@ -485,6 +485,8 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 			idStr := val.(string)
 			find["username"] = idStr
 		}
+	} else if _, ok := m["username"]; ok {
+		return http.StatusUnauthorized, errors.New("unauthorized")
 	}
 	if val, ok := m["my_bookings"]; ok {
 		filterMyBookings := val.(bool)
