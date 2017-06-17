@@ -149,8 +149,11 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
 
       _idChanged(_id) {
+        if (this.route.prefix != '/court') {
+          return;
+        }
+
         this.newCourt = (_id == 'new');
-        
         if (_id && !this.newCourt) {
           this.$.getAjax.body = {
             _id: _id
