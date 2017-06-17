@@ -7,7 +7,6 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="./config-behavior.html">
-<link rel="import" href="shared-styles.html">
 
 <dom-module id="lts-user">
   <template>
@@ -86,10 +85,8 @@ Copyright (c) 2017 Ilari Pihlajisto
     </div>
     <iron-ajax
       id="userAjax"
-      auto
       url="/api/user"
       method="post"
-      body="{{userOptions}}"
       content-type="application/json"
       handle-as="text"
       on-response="handleUserResponse"
@@ -97,10 +94,8 @@ Copyright (c) 2017 Ilari Pihlajisto
     </iron-ajax>
     <iron-ajax
       id="userBookingsAjax"
-      auto
       url="/api/bookings"
       method="post"
-      body="{{bookingsOptions}}"
       content-type="application/json"
       handle-as="text"
       on-response="handleBookingsResponse"
@@ -115,14 +110,6 @@ Copyright (c) 2017 Ilari Pihlajisto
       static get properties() {
         return _.defaults({
           error: String,
-          userOptions: {
-            type: Object,
-            computed: 'computeUserOptions(routeData.username)'
-          },
-          bookingsOptions: {
-            type: Object,
-            computed: 'computeBookingsOptions(routeData.username)'
-          },
           user: {
             type: Object,
             value: {}
@@ -131,19 +118,29 @@ Copyright (c) 2017 Ilari Pihlajisto
         }, ConfigImpl.properties);
       }
 
-      computeUserOptions(username) {
-        return {
-          username: username
-        };
+      static get observers() {
+        return [
+          'usernameChanged(routeData.username)'
+        ];
       }
 
-      computeBookingsOptions(username) {
-        return {
+      usernameChanged(username) {
+        if (this.route.prefix != '/user' || !username) {
+          return;
+        }
+
+        this.$.userAjax.body = {
+          username: username
+        };
+        this.$.userAjax.generateRequest();
+
+        this.$.userBookingsAjax.body = {
           username: username,
           date_begin: '2017-06-01',
           date_end: '2099-06-01',
           sort_desc: true
         };
+        this.$.userBookingsAjax.generateRequest();
       }
 
       _courtName(courtId) {
