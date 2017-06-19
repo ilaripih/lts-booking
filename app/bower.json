@@ -6,7 +6,6 @@
   "license": "https://polymer.github.io/LICENSE.txt",
   "dependencies": {
     "app-layout": "PolymerElements/app-layout#2.0-preview",
-    "app-route": "*",
     "iron-flex-layout": "PolymerElements/iron-flex-layout#2.0-preview",
     "iron-icon": "PolymerElements/iron-icon#2.0-preview",
     "iron-iconset-svg": "PolymerElements/iron-iconset-svg#2.0-preview",
@@ -31,7 +30,8 @@
     "sugar": "^2.0.4",
     "iron-a11y-keys": "^2.0.0",
     "web-animations-js": "^2.2.5",
-    "iron-ajax": "^2.0.2"
+    "iron-ajax": "^2.0.2",
+    "app-route": "PolymerElements/app-route#^2.0.0"
   },
   "resolutions": {
     "polymer": "^2.0.0-rc.1"
