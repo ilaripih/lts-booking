@@ -68,6 +68,14 @@
 		"user_details": "Käyttäjän tiedot",
 		"bookings": "Varaukset",
 		"booking_text": "Varausteksti",
-		"users": "Käyttäjät"
+		"users": "Käyttäjät",
+		"paid_at": "Maksettu",
+		"payment_type": "Maksutapa",
+		"cash": "käteinen",
+		"bank_transfer": "tilisiirto",
+		"not_paid": "ei maksettu",
+		"booking_info": "Varauksen tiedot",
+		"booking_info_success": "Varauksen tiedot päivitettiin onnistuneesti",
+		"back": "Takaisin"
 	}
 }

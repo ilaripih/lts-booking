@@ -15,7 +15,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         display: block;
       }
 
-      td:first-child {
+      td {
         padding-right: 12px;
       }
 
@@ -70,13 +70,19 @@ Copyright (c) 2017 Ilari Pihlajisto
             <tr>
               <th>[[localize('time')]]</th>
               <th>[[localize('court')]]</th>
+              <th hidden$="[[!isAdminUser]]">[[localize('customer')]]</th>
+              <th>[[localize('paid_at')]]</th>
+              <th>[[localize('payment_type')]]</th>
             </tr>
           </thead>
           <tbody>
             <template is="dom-repeat" items="[[bookings]]" as="booking">
               <tr>
-                <td>[[_bookingTimes(booking.begin, booking.end)]]</td>
+                <td><a href="/edit-booking/[[booking._id]]">[[_bookingTimes(booking.begin, booking.end)]]</a></td>
                 <td>[[_courtName(booking.court_id)]]</td>
+                <td hidden$="[[!isAdminUser]]">[[booking.title]]</td>
+                <td>[[_parseMongoTime(booking.paid_at)]]</td>
+                <td>[[localize(booking.payment_type)]]</td>
               </tr>
             </template>
           </tbody>
@@ -114,6 +120,10 @@ Copyright (c) 2017 Ilari Pihlajisto
             type: Object,
             value: {}
           },
+          isAdminUser: {
+            type: Boolean,
+            computed: 'computeIsAdminUser(user)'
+          },
           courts: Array
         }, ConfigImpl.properties);
       }
@@ -122,6 +132,10 @@ Copyright (c) 2017 Ilari Pihlajisto
         return [
           'usernameChanged(routeData.username)'
         ];
+      }
+
+      computeIsAdminUser(user) {
+        return (('level' in user) && user.level == 'admin');
       }
 
       usernameChanged(username) {

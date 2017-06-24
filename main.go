@@ -51,6 +51,8 @@ type Booking struct {
 	Begin time.Time `json:"begin" bson:"begin"`
 	End time.Time `json:"end" bson:"end"`
 	CreatedAt time.Time `bson:"created_at" json:"-"`
+	PaidAt *time.Time `bson:"paid_at" json:"paid_at"`
+	PaymentType string `bson:"payment_type" json:"payment_type"`
 }
 
 var mongo *mgo.Session
@@ -445,6 +447,37 @@ func deleteCourtHandler(w http.ResponseWriter, r *http.Request, m map[string]int
 	return http.StatusOK, nil
 }
 
+func bookingHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	idStr := m["_id"].(string)
+	if !bson.IsObjectIdHex(idStr) {
+		return http.StatusNotFound, errors.New("not_found")
+	}
+
+	find := bson.M{
+		"_id": bson.ObjectIdHex(idStr),
+	}
+	if sess.Values["level"] != "admin" {
+		find["username"] = sess.Values["username"]
+	}
+
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("bookings")
+
+	var booking bson.M
+	if err := c.Find(find).One(&booking); err != nil {
+		return http.StatusNotFound, err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+	if err := encoder.Encode(booking); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
 func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	beginStr := m["date_begin"].(string)
 	endStr := m["date_end"].(string)
@@ -483,6 +516,8 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	if sess.Values["level"] == "admin" {
 		fields["username"] = 1
 		fields["created_at"] = 1
+		fields["paid_at"] = 1
+		fields["payment_type"] = 1
 		if val, ok := m["username"]; ok {
 			idStr := val.(string)
 			find["username"] = idStr
@@ -674,6 +709,35 @@ func cancelBookingHandler(w http.ResponseWriter, r *http.Request, m map[string]i
 	return http.StatusOK, nil
 }
 
+func setBookingPaymentHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	idStr := m["_id"].(string)
+	if !bson.IsObjectIdHex(idStr) {
+		return http.StatusNotFound, errors.New("not_found")
+	}
+	id := bson.ObjectIdHex(idStr)
+	values := bson.M{"_id": id}
+
+	paymentType := m["payment_type"]
+	if paymentType == "not_paid" {
+		paymentType = ""
+		values["paid_at"] = nil
+	} else {
+		ts := time.Now()
+		values["paid_at"] = &ts
+	}
+	values["payment_type"] = paymentType
+
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("bookings")
+
+	if err := c.Update(bson.M{"_id": id}, bson.M{"$set": values}); err != nil {
+		return http.StatusNotFound, err
+	}
+
+	return http.StatusOK, nil
+}
+
 func userHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	username := m["username"].(string)
 
@@ -794,10 +858,13 @@ func main() {
 		"saturday_open", "saturday_close",
 		"sunday_open", "sunday_close"))
 	http.HandleFunc("/api/delete_court", myHandler(deleteCourtHandler, "admin", "_id"))
+	http.HandleFunc("/api/booking", myHandler(bookingHandler, "user", "_id"))
 	http.HandleFunc("/api/bookings", myHandler(bookingsHandler, "", "date_begin", "date_end"))
 	http.HandleFunc("/api/book_court", myHandler(bookHandler, "user",
 		"court_id", "date", "time_begin", "time_end"))
 	http.HandleFunc("/api/cancel_booking", myHandler(cancelBookingHandler, "user", "_id"))
+	http.HandleFunc("/api/set_booking_payment", myHandler(setBookingPaymentHandler, "admin",
+		"_id", "payment_type"))
 	http.HandleFunc("/api/update_user_password", myHandler(updateUserPasswordHandler, "user",
 		"current_password", "new_password"))
 	http.HandleFunc("/api/user", myHandler(userHandler, "admin", "username"))

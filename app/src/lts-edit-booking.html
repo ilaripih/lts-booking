@@ -1,0 +1,215 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="./config-behavior.html">
+
+<dom-module id="lts-edit-booking">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      .wrapper-btns {
+        margin-top: 15px;
+      }
+
+      .valid {
+        color: green;
+      }
+
+      .invalid {
+        color: red;
+      }
+
+      paper-button.link {
+        color: #757575;
+      }
+
+      td {
+        padding-right: 15px;
+      }
+
+      td:first-child {
+        font-weight: bold;
+      }
+
+      paper-listbox {
+        overflow-x: hidden;
+      }
+
+      paper-item {
+        width: 100%;
+      }
+    </style>
+
+    <app-location route="{{rootRoute}}"></app-location>
+    <app-route
+      route="{{route}}"
+      pattern="/:booking_id"
+      data="{{routeData}}"></app-route>
+    <div class="card">
+      <div id="authenticated">
+        <h1>[[localize('booking_info')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+        <template is="dom-if" if="[[success]]">
+          <p class="alert-success">[[localize(success)]]</p>
+        </template>
+
+        <table>
+          <tbody>
+            <tr>
+              <td><strong>[[localize('date')]]</strong></td>
+              <td>[[_bookingTimes(booking.begin, booking.end)]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('court')]]</strong></td>
+              <td>[[_courtName(booking.court_id)]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('customer')]]</strong></td>
+              <td>[[booking.title]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('paid_at')]]</strong></td>
+              <td>[[_parseMongoTime(booking.paid_at)]]</td>
+            </tr>
+            <tr>
+              <td><strong>[[localize('payment_type')]]</strong></td>
+              <td>
+                <paper-radio-group id="paymentType" selected="[[_paymentType(booking.payment_type)]]">
+                  <paper-radio-button name="not_paid">[[localize('not_paid')]]</paper-radio-button>
+                  <paper-radio-button name="cash">[[localize('cash')]]</paper-radio-button>
+                  <paper-radio-button name="bank_transfer">[[localize('bank_transfer')]]</paper-radio-button>
+                </paper-radio-group>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="wrapper-btns">
+          <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+          <paper-button class="link" on-tap="back">[[localize('back')]]</paper-button>
+        </div>
+      </div>
+    </div>
+
+    <iron-ajax
+      id="bookingAjax"
+      url="/api/booking"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleBookingResponse"
+      on-error="handleBookingError">
+    </iron-ajax>
+    <iron-ajax
+      id="saveAjax"
+      url="/api/set_booking_payment"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSaveResponse"
+      on-error="handleSaveError">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsEditBooking extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-edit-booking'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          success: String,
+          booking: Object
+        }, ConfigImpl.properties);
+      }
+
+      static get observers() {
+        return [
+          '_routeDataChanged(routeData)'
+        ];
+      }
+
+      _paymentType(paymentType) {
+        if (paymentType) {
+          return paymentType;
+        }
+        return 'not_paid';
+      }
+
+      _routeDataChanged(routeData) {
+        if (!routeData || this.route.prefix != '/edit-booking') {
+          return;
+        }
+        this.error = '';
+        this.success = '';
+
+        this.$.bookingAjax.body = {
+          _id: routeData.booking_id
+        };
+        this.$.bookingAjax.generateRequest();
+      }
+
+      _courtName(courtId) {
+        var court = _.find(this.courts, function(obj) {
+          return obj._id == courtId;
+        });
+        if (court) {
+          return court.name;
+        }
+        return '?';
+      }
+
+      handleBookingResponse(event) {
+        this.error = '';
+        this.booking = JSON.parse(event.detail.response);
+      }
+
+      handleBookingError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      postSave() {
+        this.$.saveAjax.body = {
+          _id: this.booking._id,
+          payment_type: this.$.paymentType.selected
+        };
+        this.$.saveAjax.generateRequest();
+      }
+
+      handleSaveResponse(event) {
+        this.error = '';
+        this.success = 'booking_info_success';
+        this.$.bookingAjax.generateRequest();
+      }
+
+      handleSaveError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      back() {
+        this.set('rootRoute.path', '/user/' + this.booking.username);
+      }
+    }
+
+    window.customElements.define(LtsEditBooking.is, LtsEditBooking);
+  </script>
+</dom-module>
