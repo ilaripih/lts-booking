@@ -9,6 +9,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/iron-input/iron-input.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="./config-behavior.html">
 
@@ -61,6 +62,8 @@ Copyright (c) 2017 Ilari Pihlajisto
         </template>
 
         <paper-input id="name" type="text" label="[[localize('name')]]" value="{{formData.name}}" required auto-validate invalid="{{invalid.name}}"></paper-input>
+        <paper-textarea always-float-label label="[[localize('booking_text')]]" value="{{formData.booking_text}}"></paper-textarea>
+
         <div class="availability">
           <label>[[localize('available_week_days')]]</label>
           <paper-input id="weekDaysOpen" type="text" maxlength="5" minlength="5" label="" value="{{formData.week_days_open}}" required auto-validate invalid="{{invalid.week_days_open}}"></paper-input>
@@ -165,12 +168,19 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
 
       _reqBody() {
+        var timeKeys = [
+          'week_days_open', 'week_days_close',
+          'saturday_open', 'saturday_close',
+          'sunday_open', 'sunday_close'
+        ];
+
         var data = {
           _id: this._id,
-          name: this.formData.name
+          name: this.formData.name,
+          booking_text: this.formData.booking_text
         };
         for (var key in this.formData) {
-          if (key != 'name') {
+          if (_.includes(timeKeys, key)) {
             data[key] = this._parseTime(this.formData[key]);
           }
         }
@@ -233,6 +243,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         var resp = JSON.parse(event.detail.response);
 
         this.set('formData.name', resp.name);
+        this.set('formData.booking_text', resp.booking_text);
         this.set('formData.week_days_open', this._intToTime(resp.week_days_open));
         this.set('formData.week_days_close', this._intToTime(resp.week_days_close));
         this.set('formData.saturday_open', this._intToTime(resp.saturday_open));

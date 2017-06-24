@@ -104,6 +104,9 @@ Copyright (c) 2017 Ilari Pihlajisto
                 </td>
               </tr>
             </template>
+            <template is="dom-if" if="[[!isadmin]]">
+              <p>[[court.booking_text]]</p>
+            </template>
           </tbody>
         </table>
 
