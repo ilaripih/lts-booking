@@ -1,0 +1,83 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="./config-behavior.html">
+
+<dom-module id="lts-users">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      table {
+        border-collapse: collapse;
+      }
+
+      th, td {
+        padding: 0 8px;
+        text-align: left;
+        border: 1px solid grey;
+      }
+
+      tbody tr:nth-child(odd) {
+        background-color: #edf3fc;
+      }
+    </style>
+
+    <div class="card">
+      <div id="authenticated">
+        <h1>[[localize('users')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+
+        <table>
+          <thead>
+            <tr>
+              <th>[[localize('username')]]</th>
+              <th>[[localize('name')]]</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template is="dom-repeat" items="[[users]]" as="user">
+              <tr>
+                <td><a href="/user/[[user.username]]">[[user.username]]</a></td>
+                <td>[[user.name]]</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <iron-ajax
+      id="usersAjax"
+      auto
+      url="/api/users"
+      method="post"
+      content-type="application/json"
+      handle-as="json"
+      last-response="{{users}}">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsUsers extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-users'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          users: Array
+        }, ConfigImpl.properties);
+      }
+    }
+
+    window.customElements.define(LtsUsers.is, LtsUsers);
+  </script>
+</dom-module>

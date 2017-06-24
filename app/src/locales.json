@@ -67,6 +67,7 @@
 		"user": "Käyttäjä",
 		"user_details": "Käyttäjän tiedot",
 		"bookings": "Varaukset",
-		"booking_text": "Varausteksti"
+		"booking_text": "Varausteksti",
+		"users": "Käyttäjät"
 	}
 }

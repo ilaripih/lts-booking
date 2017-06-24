@@ -80,6 +80,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
           <a name="calendar" href="/calendar">[[localize('calendar')]]</a>
           <a name="courts" hidden="[[!isAdmin]]" href="/courts">[[localize('courts')]]</a>
+          <a name="users" hidden="[[!isAdmin]]" href="/users">[[localize('users')]]</a>
           <a name="settings" hidden="[[!user]]" href="/settings">[[localize('settings')]]</a>
           <a name="my-bookings" hidden="[[!user]]" href="/my-bookings">[[localize('my_bookings')]]</a>
           <a name="login" hidden="[[user]]" href="/login">[[localize('login')]]</a>
@@ -104,6 +105,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             role="main">
           <lts-calendar name="calendar" route="{{subroute}}" courts="{{courts}}"></lts-calendar>
           <lts-courts name="courts" courts="{{courts}}"></lts-courts>
+          <lts-users name="users"></lts-users>
           <lts-court name="court" route="{{subroute}}" courts="{{courts}}"></lts-court>
           <lts-book name="book" route="{{subroute}}" isadmin="{{isAdmin}}" courts="{{courts}}"></lts-book>
           <lts-settings name="settings" user="{{user}}"></lts-settings>
