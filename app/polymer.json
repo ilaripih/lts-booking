@@ -9,10 +9,12 @@
     "src/lts-change-password.html",
     "src/lts-court.html",
     "src/lts-courts.html",
+    "src/lts-edit-booking.html",
     "src/lts-login.html",
     "src/lts-my-bookings.html",
     "src/lts-settings.html",
     "src/lts-user.html",
+    "src/lts-users.html",
     "src/lts-view404.html",
     "src/my-icons.html",
     "src/shared-styles.html"
