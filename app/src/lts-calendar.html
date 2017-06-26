@@ -102,8 +102,9 @@ Copyright (c) 2017 Ilari Pihlajisto
       body="{{options}}"
       method="post"
       content-type="application/json"
-      handle-as="json"
-      last-response="{{bookings}}">
+      handle-as="text"
+      on-response="onBookingsResponse"
+      on-error="onBookingsError">
     </iron-ajax>
   </template>
 
@@ -145,6 +146,9 @@ Copyright (c) 2017 Ilari Pihlajisto
       _routeChanged(route) {
         if (route.prefix == '/calendar' && route.path == '') {
           this.$.bookingsAjax.generateRequest();
+        } else if (this.ajaxInterval) {
+          clearInterval(this.ajaxInterval);
+          this.ajaxInterval = null;
         }
       }
 
@@ -252,6 +256,23 @@ Copyright (c) 2017 Ilari Pihlajisto
         }
 
         return ret;
+      }
+
+      onBookingsResponse(event) {
+        this.error = '';
+        this.bookings = JSON.parse(event.detail.response);
+
+        if (!this.ajaxInterval) {
+          this.ajaxInterval = setInterval(function() {
+            this.$.bookingsAjax.generateRequest();
+          }.bind(this), 20000);
+        }
+      }
+
+      onBookingsError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+        clearInterval(this.ajaxInterval);
+        this.ajaxInterval = null;
       }
     }
 
