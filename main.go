@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
@@ -594,6 +595,7 @@ func hasFullUserDetails(sess *sessions.Session) bool {
 	return true
 }
 
+var bookHandlerMutex sync.Mutex
 func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	if !hasFullUserDetails(sess) {
 		return http.StatusUnauthorized, errors.New("missing_user_details")
@@ -624,9 +626,6 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 		return http.StatusBadRequest, errors.New("court_unavailable")
 	}
 
-	s := mongo.Copy()
-	defer s.Close()
-
 	weekDay := begin.Weekday()
 	dayPrefix := "week_days"
 	if weekDay == time.Saturday {
@@ -637,7 +636,15 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	fieldOpen := dayPrefix + "_open"
 	fieldClose := dayPrefix + "_close"
 
+	s := mongo.Copy()
+	defer s.Close()
 	c := s.DB("").C("courts")
+
+	// Checking that the court is free and inserting the booking needs to be
+	// one atomic operation.
+	bookHandlerMutex.Lock()
+	defer bookHandlerMutex.Unlock()
+
 	count, err := c.Find(bson.M{
 		"_id": courtId,
 		fieldOpen: bson.M{"$lte": beginNum},
