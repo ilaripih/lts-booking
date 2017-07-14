@@ -37,6 +37,10 @@ Copyright (c) 2017 Ilari Pihlajisto
         color: #757575;
       }
 
+      paper-button.red {
+        background-color: red;
+      }
+
       td {
         padding-right: 15px;
       }
@@ -103,6 +107,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 
         <div class="wrapper-btns">
           <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+	  <paper-button raised class="primary red" on-tap="deleteBooking">[[localize('delete_booking')]]</paper-button>
           <paper-button class="link" on-tap="back">[[localize('back')]]</paper-button>
         </div>
       </div>
@@ -125,6 +130,15 @@ Copyright (c) 2017 Ilari Pihlajisto
       handle-as="text"
       on-response="handleSaveResponse"
       on-error="handleSaveError">
+    </iron-ajax>
+    <iron-ajax
+      id="deleteBookingAjax"
+      url="/api/cancel_booking"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleDeleteBookingResponse"
+      on-error="handleDeleteBookingError">
     </iron-ajax>
   </template>
 
@@ -207,6 +221,27 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       back() {
         this.set('rootRoute.path', '/user/' + this.booking.username);
+      }
+
+      deleteBooking() {
+        if (!confirm(this.localize('delete_booking_confirm'))) {
+          return;
+        }
+
+        this.$.deleteBookingAjax.body = {
+          _id: this.booking._id
+        };
+        this.$.deleteBookingAjax.generateRequest();
+      }
+
+      handleDeleteBookingResponse(event) {
+        this.error = '';
+        this.success = 'booking_deletion_success';
+      }
+
+      handleDeleteBookingError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
       }
     }
 

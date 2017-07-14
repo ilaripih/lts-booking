@@ -33,6 +33,7 @@
 		"available_sunday": "Aukiolo su",
 		"court_updated": "Kenttä tallennettiin onnistuneesti",
 		"not_found": "Kohdetta ei löytynyt",
+		"not found": "Kohdetta ei löytynyt",
 		"already_exists": "Kohde on jo olemassa",
 		"court_deleted": "Kenttä poistettiin onnistuneesti",
 		"date": "Päivämäärä",
@@ -76,6 +77,9 @@
 		"not_paid": "ei maksettu",
 		"booking_info": "Varauksen tiedot",
 		"booking_info_success": "Varauksen tiedot päivitettiin onnistuneesti",
-		"back": "Takaisin"
+		"back": "Takaisin",
+		"delete_booking": "Poista varaus",
+		"delete_booking_confirm": "Haluatko varmasti poistaa kenttävarauksen?",
+		"booking_deletion_success": "Varaus poistettiin onnistuneesti"
 	}
 }
