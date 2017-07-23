@@ -80,6 +80,7 @@
 		"back": "Takaisin",
 		"delete_booking": "Poista varaus",
 		"delete_booking_confirm": "Haluatko varmasti poistaa kenttävarauksen?",
-		"booking_deletion_success": "Varaus poistettiin onnistuneesti"
+		"booking_deletion_success": "Varaus poistettiin onnistuneesti",
+		"created_at": "Luotu"
 	}
 }

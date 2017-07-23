@@ -28,7 +28,7 @@ type User struct {
 	LtsMember bool `json:"lts_member" bson:"lts_member"`
 	Level string `json:"level" bson:"level"`
 	Password string `bson:"password" json:"-"`
-	CreatedAt time.Time `bson:"created_at" json:"-"`
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 }
 
 type Court struct {

@@ -5,6 +5,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-users">
@@ -12,20 +13,6 @@ Copyright (c) 2017 Ilari Pihlajisto
     <style include="shared-styles">
       :host {
         display: block;
-      }
-
-      table {
-        border-collapse: collapse;
-      }
-
-      th, td {
-        padding: 0 8px;
-        text-align: left;
-        border: 1px solid grey;
-      }
-
-      tbody tr:nth-child(odd) {
-        background-color: #edf3fc;
       }
     </style>
 
@@ -37,22 +24,21 @@ Copyright (c) 2017 Ilari Pihlajisto
           <p class="alert-error">[[localize(error)]]</p>
         </template>
 
-        <table>
-          <thead>
-            <tr>
-              <th>[[localize('username')]]</th>
-              <th>[[localize('name')]]</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template is="dom-repeat" items="[[users]]" as="user">
-              <tr>
-                <td><a href="/user/[[user.username]]">[[user.username]]</a></td>
-                <td>[[user.name]]</td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
+        <vaadin-grid aria-label="[[localize('users')]]" items="[[users]]">
+          <vaadin-grid-column>
+            <template class="header">[[localize('username')]]</template>
+            <template><a href="/user/[[item.username]]">[[item.username]]</a></template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">[[localize('name')]]</template>
+            <template>[[item.name]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column width="150px" flex-grow="0">
+            <template class="header">[[localize('created_at')]]</template>
+            <template>[[_parseMongoTime(item.created_at)]]</template>
+          </vaadin-grid-column>
+        </vaadin-grid>
+
       </div>
     </div>
     <iron-ajax
