@@ -3,5 +3,5 @@
 set -x
 set -e
 
-sudo docker run --rm -v $PWD:/app lts-booking
+docker run --rm -v $PWD:/app lts-booking
 LTS_BOOKING_PORT=8081 ./lts-booking
