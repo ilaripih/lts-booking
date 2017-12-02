@@ -35,6 +35,7 @@ type Court struct {
 	Id bson.ObjectId `json:"_id" bson:"_id"`
 	Name string `json:"name" bson:"name"`
 	BookingText string `json:"booking_text" bson:"booking_text"`
+	MaxBookingLength int `json:"max_booking_length" bson:"max_booking_length"`
 	WeekDaysOpen int `json:"week_days_open" bson:"week_days_open"`
 	WeekDaysClose int `json:"week_days_close" bson:"week_days_close"`
 	SaturdayOpen int `json:"saturday_open" bson:"saturday_open"`
@@ -394,6 +395,7 @@ func saveCourtHandler(w http.ResponseWriter, r *http.Request, m map[string]inter
 	data := bson.M{
 		"name": m["name"].(string),
 		"booking_text": m["booking_text"].(string),
+		"max_booking_length": int(m["max_booking_length"].(float64)),
 		"week_days_open": int(m["week_days_open"].(float64)),
 		"week_days_close": int(m["week_days_close"].(float64)),
 		"saturday_open": int(m["saturday_open"].(float64)),
@@ -645,10 +647,12 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	bookHandlerMutex.Lock()
 	defer bookHandlerMutex.Unlock()
 
+	duration := float64(endNum - beginNum) / 60.0
 	count, err := c.Find(bson.M{
 		"_id": courtId,
 		fieldOpen: bson.M{"$lte": beginNum},
 		fieldClose: bson.M{"$gte": endNum},
+		"max_booking_length": bson.M{"$gte": duration},
 	}).Count()
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -861,7 +865,7 @@ func main() {
 	http.HandleFunc("/api/courts", myHandler(courtsHandler, ""))
 	http.HandleFunc("/api/court", myHandler(courtHandler, "", "_id"))
 	http.HandleFunc("/api/save_court", myHandler(saveCourtHandler, "admin",
-		"_id", "name", "booking_text", "week_days_open", "week_days_close",
+		"_id", "name", "booking_text", "max_booking_length", "week_days_open", "week_days_close",
 		"saturday_open", "saturday_close",
 		"sunday_open", "sunday_close"))
 	http.HandleFunc("/api/delete_court", myHandler(deleteCourtHandler, "admin", "_id"))

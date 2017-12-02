@@ -81,6 +81,7 @@
 		"delete_booking": "Poista varaus",
 		"delete_booking_confirm": "Haluatko varmasti poistaa kenttävarauksen?",
 		"booking_deletion_success": "Varaus poistettiin onnistuneesti",
-		"created_at": "Luotu"
+		"created_at": "Luotu",
+		"max_booking_length": "Varauksen maksimikesto (tuntia)"
 	}
 }
