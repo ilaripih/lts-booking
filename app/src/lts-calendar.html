@@ -179,10 +179,20 @@ Copyright (c) 2017 Ilari Pihlajisto
         }
 
         var begin = _.min(courts.map(function(court) {
-          return court[dayStr + '_open'];
+          var open = court[dayStr + '_open'];
+          var closed = court[dayStr + '_close'];
+          if (closed > open) {
+            return open;
+          }
+          return 9999;
         }));
         var end = _.max(courts.map(function(court) {
-          return court[dayStr + '_close'];
+          var open = court[dayStr + '_open'];
+          var closed = court[dayStr + '_close'];
+          if (closed > open) {
+            return closed;
+          }
+          return 0;
         }));
 
         var booked = {};
