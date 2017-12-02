@@ -236,11 +236,6 @@ Copyright (c) 2017 Ilari Pihlajisto
               return null;
             }
 
-            // In the past?
-            if (ts < today || t < nowTime) {
-              return null;
-            }
-
             // Court booked?
             var bookedObj = _.find(booked[court._id], function(obj) {
               return obj.range[0] < t + 30 && t < obj.range[1];
@@ -253,6 +248,11 @@ Copyright (c) 2017 Ilari Pihlajisto
                 bookingData.username = bookedObj.username;
               }
               return bookingData;
+            }
+
+            // In the past?
+            if (ts < today || t < nowTime) {
+              return null;
             }
 
             return {
