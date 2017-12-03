@@ -234,7 +234,7 @@ Copyright (c) 2017 Ilari Pihlajisto
           }
 
           // Max length exceeded?
-          if (t - begin > this.court.max_booking_length * 60) {
+          if (!this.isadmin && t - begin > this.court.max_booking_length * 60) {
             break;
           }
 

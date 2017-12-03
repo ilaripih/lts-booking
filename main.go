@@ -647,22 +647,22 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	bookHandlerMutex.Lock()
 	defer bookHandlerMutex.Unlock()
 
-	duration := float64(endNum - beginNum) / 60.0
-	count, err := c.Find(bson.M{
+	var court Court
+	if err := c.Find(bson.M{
 		"_id": courtId,
 		fieldOpen: bson.M{"$lte": beginNum},
 		fieldClose: bson.M{"$gte": endNum},
-		"max_booking_length": bson.M{"$gte": duration},
-	}).Count()
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	if count == 0 {
+	}).One(&court); err != nil {
 		return http.StatusBadRequest, errors.New("court_unavailable")
 	}
 
+	isAdmin := (sess.Values["level"] == "admin")
+	if !isAdmin && court.MaxBookingLength * 60 < (endNum - beginNum) {
+		return http.StatusBadRequest, errors.New("max_booking_length_exceeded")
+	}
+
 	c = s.DB("").C("bookings")
-	count, err = c.Find(bson.M{
+	count, err := c.Find(bson.M{
 		"court_id": courtId,
 		"begin": bson.M{"$lt": end},
 		"end": bson.M{"$gt": begin},
@@ -675,7 +675,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	}
 
 	title := sess.Values["name"]
-	if sess.Values["level"] == "admin" {
+	if isAdmin {
 		if val, ok := m["title"]; ok {
 			title = val.(string)
 		}
