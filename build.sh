@@ -3,6 +3,7 @@
 set -x
 set -e
 
+rm -f app/images
 ln -s $(pwd)/app/images_default app/images
 cd app
 polymer build --preset es5-bundled
