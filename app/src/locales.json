@@ -82,6 +82,9 @@
 		"delete_booking_confirm": "Haluatko varmasti poistaa kenttävarauksen?",
 		"booking_deletion_success": "Varaus poistettiin onnistuneesti",
 		"created_at": "Luotu",
-		"max_booking_length": "Varauksen maksimikesto (tuntia)"
+		"max_booking_length": "Varauksen maksimikesto (tuntia)",
+		"max_booking_length_exceeded": "Varauksen maksimikesto ylitetty",
+		"max_bookings_exceeded": "Varausten maksimimäärä ylitetty",
+		"max_bookings": "Voimassaolevien varausten maksimimäärä per käyttäjä"
 	}
 }

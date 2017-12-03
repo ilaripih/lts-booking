@@ -36,6 +36,7 @@ type Court struct {
 	Name string `json:"name" bson:"name"`
 	BookingText string `json:"booking_text" bson:"booking_text"`
 	MaxBookingLength int `json:"max_booking_length" bson:"max_booking_length"`
+	MaxBookings int `json:"max_bookings" bson:"max_bookings"`
 	WeekDaysOpen int `json:"week_days_open" bson:"week_days_open"`
 	WeekDaysClose int `json:"week_days_close" bson:"week_days_close"`
 	SaturdayOpen int `json:"saturday_open" bson:"saturday_open"`
@@ -396,6 +397,7 @@ func saveCourtHandler(w http.ResponseWriter, r *http.Request, m map[string]inter
 		"name": m["name"].(string),
 		"booking_text": m["booking_text"].(string),
 		"max_booking_length": int(m["max_booking_length"].(float64)),
+		"max_bookings": int(m["max_bookings"].(float64)),
 		"week_days_open": int(m["week_days_open"].(float64)),
 		"week_days_close": int(m["week_days_close"].(float64)),
 		"saturday_open": int(m["saturday_open"].(float64)),
@@ -672,6 +674,21 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	}
 	if count > 0 {
 		return http.StatusBadRequest, errors.New("court_already_booked")
+	}
+
+	if !isAdmin {
+		// find number of future bookings to this court
+		count, err = c.Find(bson.M{
+			"username": sess.Values["username"],
+			"court_id": courtId,
+			"begin": bson.M{"$gt": now},
+		}).Count()
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+		if count >= court.MaxBookings {
+			return http.StatusBadRequest, errors.New("max_bookings_exceeded")
+		}
 	}
 
 	title := sess.Values["name"]

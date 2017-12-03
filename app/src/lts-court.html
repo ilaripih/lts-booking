@@ -64,6 +64,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         <paper-input id="name" type="text" label="[[localize('name')]]" value="{{formData.name}}" required auto-validate invalid="{{invalid.name}}"></paper-input>
         <paper-textarea always-float-label label="[[localize('booking_text')]]" value="{{formData.booking_text}}"></paper-textarea>
         <paper-input id="max_booking_length" type="text" maxlength="2" minlength="1" label="[[localize('max_booking_length')]]" value="{{formData.max_booking_length}}" required auto-validate invalid="{{invalid.max_booking_length}}"></paper-input>
+        <paper-input id="max_bookings" type="text" maxlength="2" minlength="1" label="[[localize('max_bookings')]]" value="{{formData.max_bookings}}" required auto-validate invalid="{{invalid.max_bookings}}"></paper-input>
 
         <div class="availability">
           <label>[[localize('available_week_days')]]</label>
@@ -179,7 +180,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           _id: this._id,
           name: this.formData.name,
           booking_text: this.formData.booking_text,
-          max_booking_length: parseInt(this.formData.max_booking_length)
+          max_booking_length: parseInt(this.formData.max_booking_length),
+          max_bookings: parseInt(this.formData.max_bookings)
         };
         for (var key in this.formData) {
           if (_.includes(timeKeys, key)) {
@@ -247,6 +249,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.set('formData.name', resp.name);
         this.set('formData.booking_text', resp.booking_text);
         this.set('formData.max_booking_length', resp.max_booking_length);
+        this.set('formData.max_bookings', resp.max_bookings);
         this.set('formData.week_days_open', this._intToTime(resp.week_days_open));
         this.set('formData.week_days_close', this._intToTime(resp.week_days_close));
         this.set('formData.saturday_open', this._intToTime(resp.saturday_open));
