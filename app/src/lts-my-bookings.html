@@ -70,7 +70,7 @@ Copyright (c) 2017 Ilari Pihlajisto
                   <td>[[booking.title]]</td>
                 </template>
                 <td>
-                  <template is="dom-if" if="[[_canCancel(booking.begin)]]">
+                  <template is="dom-if" if="[[_canCancel(booking)]]">
                     <paper-button raised on-tap="cancel" data-index$="[[index]]" data-db-id$="[[booking._id]]">[[localize('cancel')]]</paper-button>
                   </template>
                 </td>
@@ -149,14 +149,18 @@ Copyright (c) 2017 Ilari Pihlajisto
         return '?';
       }
 
-      _canCancel(beginStr) {
-        var begin = new Date(beginStr);
+      _canCancel(booking) {
+        var begin = new Date(booking.begin);
         var now = new Date();
         var diff = (begin - now) / 3600000;
         if (this.isadmin) {
           return diff > 0;
         }
-        return diff > 8;
+
+        var court = _.find(this.courts, function(obj) {
+          return obj._id == booking.court_id;
+        });
+        return diff > court.cancellation_period;
       }
 
       cancel(event) {

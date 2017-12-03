@@ -37,6 +37,7 @@ type Court struct {
 	BookingText string `json:"booking_text" bson:"booking_text"`
 	MaxBookingLength int `json:"max_booking_length" bson:"max_booking_length"`
 	MaxBookings int `json:"max_bookings" bson:"max_bookings"`
+	CancellationPeriod int `json:"cancellation_period" bson:"cancellation_period"`
 	WeekDaysOpen int `json:"week_days_open" bson:"week_days_open"`
 	WeekDaysClose int `json:"week_days_close" bson:"week_days_close"`
 	SaturdayOpen int `json:"saturday_open" bson:"saturday_open"`
@@ -398,6 +399,7 @@ func saveCourtHandler(w http.ResponseWriter, r *http.Request, m map[string]inter
 		"booking_text": m["booking_text"].(string),
 		"max_booking_length": int(m["max_booking_length"].(float64)),
 		"max_bookings": int(m["max_bookings"].(float64)),
+		"cancellation_period": int(m["cancellation_period"].(float64)),
 		"week_days_open": int(m["week_days_open"].(float64)),
 		"week_days_close": int(m["week_days_close"].(float64)),
 		"saturday_open": int(m["saturday_open"].(float64)),
@@ -722,12 +724,24 @@ func cancelBookingHandler(w http.ResponseWriter, r *http.Request, m map[string]i
 
 	s := mongo.Copy()
 	defer s.Close()
-	c := s.DB("").C("bookings")
 
+	c := s.DB("").C("bookings")
+	var booking Booking
+	if err := c.Find(bson.M{"_id": id}).One(&booking); err != nil {
+		return http.StatusNotFound, err
+	}
+
+	c = s.DB("").C("courts")
+	var court Court
+	if err := c.Find(bson.M{"_id": booking.CourtId}).One(&court); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	c = s.DB("").C("bookings")
 	fields := bson.M{"_id": id}
 	if sess.Values["level"] != "admin" {
 		fields["username"] = sess.Values["username"]
-		fields["begin"] = bson.M{"$gt": time.Now().Add(time.Hour * 8)}
+		fields["begin"] = bson.M{"$gt": time.Now().Add(time.Hour * time.Duration(court.CancellationPeriod))}
 	}
 
 	if err := c.Remove(fields); err != nil {
