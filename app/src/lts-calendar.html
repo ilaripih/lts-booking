@@ -250,6 +250,11 @@ Copyright (c) 2017 Ilari Pihlajisto
               return bookingData;
             }
 
+            // Maximum booking length <= 0?
+            if (court.max_booking_length <= 0) {
+              return null;
+            }
+
             // In the past?
             if (ts < today || t < nowTime) {
               return null;
