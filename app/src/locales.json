@@ -86,6 +86,7 @@
 		"max_booking_length_exceeded": "Varauksen maksimikesto ylitetty",
 		"max_bookings_exceeded": "Varausten maksimimäärä ylitetty",
 		"max_bookings": "Voimassaolevien varausten maksimimäärä per käyttäjä",
-		"cancellation_period": "Viimeinen peruutusmahdollisuus (tunteja ennen varauksen alkua)"
+		"cancellation_period": "Viimeinen peruutusmahdollisuus (tunteja ennen varauksen alkua)",
+		"weekly_recurring_booking": "Viikoittain toistuva varaus"
 	}
 }

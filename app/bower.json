@@ -36,7 +36,8 @@
     "paper-radio-group": "PolymerElements/paper-radio-group#v2.0.0",
     "vaadin-grid": "v4.1.0-alpha6",
     "vaadin-button": "v1.0.4",
-    "vaadin-material-theme": "v0.3.0"
+    "vaadin-material-theme": "v0.3.0",
+    "paper-toggle-button": "PolymerElements/paper-toggle-button#v2.0.0"
   },
   "devDependencies": {
     "web-component-tester": "v6.4.1"

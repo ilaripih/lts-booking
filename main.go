@@ -57,6 +57,7 @@ type Booking struct {
 	CreatedAt time.Time `bson:"created_at" json:"-"`
 	PaidAt *time.Time `bson:"paid_at" json:"paid_at"`
 	PaymentType string `bson:"payment_type" json:"payment_type"`
+	Recurring bool `bson:"recurring" json:"recurring"`
 }
 
 var mongo *mgo.Session
@@ -611,6 +612,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	dateStr := m["date"].(string)
 	beginNum := int(m["time_begin"].(float64))
 	endNum := int(m["time_end"].(float64))
+	recurring := false
 
 	if !bson.IsObjectIdHex(courtIdStr) {
 		return http.StatusNotFound, errors.New("not_found")
@@ -698,6 +700,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 		if val, ok := m["title"]; ok {
 			title = val.(string)
 		}
+		recurring = m["recurring"].(bool)
 	}
 
 	booking := bson.M{
@@ -707,6 +710,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 		"begin": begin,
 		"end": end,
 		"created_at": &now,
+		"recurring": recurring,
 	}
 	if err := c.Insert(booking); err != nil {
 		return http.StatusInternalServerError, err
@@ -903,7 +907,7 @@ func main() {
 	http.HandleFunc("/api/booking", myHandler(bookingHandler, "user", "_id"))
 	http.HandleFunc("/api/bookings", myHandler(bookingsHandler, "", "date_begin", "date_end"))
 	http.HandleFunc("/api/book_court", myHandler(bookHandler, "user",
-		"court_id", "date", "time_begin", "time_end"))
+		"court_id", "date", "time_begin", "time_end", "recurring"))
 	http.HandleFunc("/api/cancel_booking", myHandler(cancelBookingHandler, "user", "_id"))
 	http.HandleFunc("/api/set_booking_payment", myHandler(setBookingPaymentHandler, "admin",
 		"_id", "payment_type"))
