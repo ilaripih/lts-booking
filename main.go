@@ -498,15 +498,31 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
+	recurring := false
+	if val, ok := m["recurring"]; ok {
+		recurring = val.(bool)
+	}
 
 	s := mongo.Copy()
 	defer s.Close()
 	c := s.DB("").C("bookings")
 
 	find := bson.M{
-		"begin": bson.M{"$gte": begin},
 		"end": bson.M{"$lte": end},
 	}
+	if !recurring {
+		find["begin"] = bson.M{"$gte": begin}
+	} else {
+		find["$or"] = []bson.M{
+			bson.M{
+				"begin": bson.M{"$gte": begin},
+			},
+			bson.M{
+				"recurring": true,
+			},
+		}
+	}
+
 	fields := bson.M{
 		"_id": 1,
 		"court_id": 1,
