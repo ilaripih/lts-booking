@@ -57,7 +57,7 @@ type Booking struct {
 	CreatedAt time.Time `bson:"created_at" json:"-"`
 	PaidAt *time.Time `bson:"paid_at" json:"paid_at"`
 	PaymentType string `bson:"payment_type" json:"payment_type"`
-	Recurring bool `bson:"recurring" json:"recurring"`
+	WeekDay int `bson:"weekday" json:"weekday"`
 }
 
 var mongo *mgo.Session
@@ -518,7 +518,7 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 				"begin": bson.M{"$gte": begin},
 			},
 			bson.M{
-				"recurring": true,
+				"weekday": int(begin.Weekday()),
 			},
 		}
 	}
@@ -628,7 +628,6 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	dateStr := m["date"].(string)
 	beginNum := int(m["time_begin"].(float64))
 	endNum := int(m["time_end"].(float64))
-	recurring := false
 
 	if !bson.IsObjectIdHex(courtIdStr) {
 		return http.StatusNotFound, errors.New("not_found")
@@ -711,12 +710,16 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 		}
 	}
 
+	dayOfWeek := -1
 	title := sess.Values["name"]
 	if isAdmin {
 		if val, ok := m["title"]; ok {
 			title = val.(string)
 		}
-		recurring = m["recurring"].(bool)
+		recurring := m["recurring"].(bool)
+		if recurring {
+			dayOfWeek = int(begin.Weekday())
+		}
 	}
 
 	booking := bson.M{
@@ -726,7 +729,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 		"begin": begin,
 		"end": end,
 		"created_at": &now,
-		"recurring": recurring,
+		"weekday": dayOfWeek,
 	}
 	if err := c.Insert(booking); err != nil {
 		return http.StatusInternalServerError, err
