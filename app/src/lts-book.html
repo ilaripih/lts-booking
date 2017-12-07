@@ -200,7 +200,8 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.$.bookingsAjax.body = {
           court_id: routeData.court_id,
           date_begin: routeData.date,
-          date_end: routeData.date
+          date_end: routeData.date,
+          recurring: true
         };
         this.$.bookingsAjax.generateRequest();
       }
