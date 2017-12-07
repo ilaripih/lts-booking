@@ -618,6 +618,36 @@ func hasFullUserDetails(sess *sessions.Session) bool {
 	return true
 }
 
+func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (bool, error) {
+	var bookings []Booking
+	if err := c.Find(bson.M{
+		"court_id": id,
+		"$or": []bson.M{
+			bson.M{
+				"begin": bson.M{"$lt": end},
+				"end": bson.M{"$gt": begin},
+			},
+			bson.M{
+				"weekday": int(begin.Weekday()),
+			},
+		},
+	}).All(&bookings); err != nil {
+		return false, err
+	}
+
+	tBegin := begin.Hour() * 60 + begin.Minute()
+	tEnd := end.Hour() * 60 + end.Minute()
+	for _, b := range bookings {
+		bBegin := b.Begin.Hour() * 60 + b.Begin.Minute()
+		bEnd := b.End.Hour() * 60 + b.End.Minute()
+		if tBegin < bEnd && tEnd > bBegin {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 var bookHandlerMutex sync.Mutex
 func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	if !hasFullUserDetails(sess) {
@@ -683,21 +713,17 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	}
 
 	c = s.DB("").C("bookings")
-	count, err := c.Find(bson.M{
-		"court_id": courtId,
-		"begin": bson.M{"$lt": end},
-		"end": bson.M{"$gt": begin},
-	}).Count()
+	isBooked, err := isCourtBooked(courtId, begin, end, c)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	if count > 0 {
+	if isBooked {
 		return http.StatusBadRequest, errors.New("court_already_booked")
 	}
 
 	if !isAdmin {
 		// find number of future bookings to this court
-		count, err = c.Find(bson.M{
+		count, err := c.Find(bson.M{
 			"username": sess.Values["username"],
 			"court_id": courtId,
 			"begin": bson.M{"$gt": now},
