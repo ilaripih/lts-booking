@@ -60,6 +60,11 @@ type Booking struct {
 	WeekDay int `bson:"weekday" json:"weekday"`
 }
 
+type Settings struct {
+	Id bson.ObjectId `json:"_id" bson:"_id"`
+	OpenRegistration bool `json:"open_registration" bson:"open_registration"`
+}
+
 var mongo *mgo.Session
 var appDir = "./app"
 var store = sessions.NewCookieStore([]byte("lts-cookie-store"))
@@ -170,7 +175,32 @@ func myHandler(fn func(http.ResponseWriter, *http.Request, map[string]interface{
 	})
 }
 
+func getSettings() (*Settings, error) {
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("settings")
+
+	var settings Settings
+	if err := c.Find(nil).One(&settings); err != nil {
+		if err.Error() == "not found" {
+			settings.OpenRegistration = true
+		} else {
+			return nil, err
+		}
+	}
+
+	return &settings, nil
+}
+
 func signupHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	settings, err := getSettings()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if !settings.OpenRegistration {
+		return http.StatusBadRequest, errors.New("open_registration_disallowed")
+	}
+
 	username := m["username"].(string)
 	password := m["password"].(string)
 
@@ -870,6 +900,38 @@ func usersHandler(w http.ResponseWriter, r *http.Request, m map[string]interface
 	return http.StatusOK, nil
 }
 
+func settingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	settings, err := getSettings()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+	if err := encoder.Encode(settings); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func updateSettingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("settings")
+
+	obj := bson.M{}
+	if val, ok := m["open_registration"]; ok {
+		obj["open_registration"] = val
+	}
+
+	if _, err := c.Upsert(nil, bson.M{"$set": obj}); err != nil {
+		return http.StatusNotFound, err
+	}
+
+	return http.StatusOK, nil
+}
+
 func serveIndex(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, appDir + "/index.html")
 }
@@ -961,6 +1023,8 @@ func main() {
 		"current_password", "new_password"))
 	http.HandleFunc("/api/user", myHandler(userHandler, "admin", "username"))
 	http.HandleFunc("/api/users", myHandler(usersHandler, "admin"))
+	http.HandleFunc("/api/settings", myHandler(settingsHandler, ""))
+	http.HandleFunc("/api/update_settings", myHandler(updateSettingsHandler, "admin"))
 
 	port := os.Getenv("LTS_BOOKING_PORT")
 	if port != "" {

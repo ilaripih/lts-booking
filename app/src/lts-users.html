@@ -6,6 +6,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-users">
@@ -23,6 +24,11 @@ Copyright (c) 2017 Ilari Pihlajisto
         <template is="dom-if" if="[[error]]">
           <p class="alert-error">[[localize(error)]]</p>
         </template>
+
+        <paper-toggle-button on-change="toggleOpenRegistration" checked="{{settings.open_registration}}">
+          [[localize('open_registration_toggle')]]
+        </paper-toggle-button>
+        <br />
 
         <vaadin-grid aria-label="[[localize('users')]]" items="[[users]]">
           <vaadin-grid-column>
@@ -50,6 +56,23 @@ Copyright (c) 2017 Ilari Pihlajisto
       handle-as="json"
       last-response="{{users}}">
     </iron-ajax>
+    <iron-ajax
+      id="settingsAjax"
+      auto
+      url="/api/settings"
+      method="post"
+      content-type="application/json"
+      handle-as="json"
+      last-response="{{settings}}">
+    </iron-ajax>
+    <iron-ajax
+      id="updateSettingsAjax"
+      url="/api/update_settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-error="handleUpdateSettingsError">
+    </iron-ajax>
   </template>
 
   <script>
@@ -59,8 +82,23 @@ Copyright (c) 2017 Ilari Pihlajisto
       static get properties() {
         return _.defaults({
           error: String,
-          users: Array
+          users: Array,
+          settings: {
+            type: Object,
+            value: {
+              open_registration: false
+            }
+          },
         }, ConfigImpl.properties);
+      }
+
+      toggleOpenRegistration(event) {
+        this.$.updateSettingsAjax.body = this.settings;
+        this.$.updateSettingsAjax.generateRequest();
+      }
+
+      handleUpdateSettingsError(event) {
+        this.error = event.detail.request.xhr.response.trim();
       }
     }
 

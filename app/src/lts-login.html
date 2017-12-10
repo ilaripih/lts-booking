@@ -49,7 +49,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </div>
         <div class="wrapper-btns">
           <paper-button raised class="primary" on-tap="postLogin">[[localize('login')]]</paper-button>
-          <paper-button class="link" on-tap="postRegister">[[localize('sign_up')]]</paper-button>
+          <template is="dom-if" if="[[settings.open_registration]]">
+            <paper-button class="link" on-tap="postRegister">[[localize('sign_up')]]</paper-button>
+          </template>
         </div>
       </div>
     </div>
@@ -62,6 +64,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       handle-as="text"
       on-response="handleUserResponse"
       on-error="handleUserError">
+    </iron-ajax>
+    <iron-ajax
+      id="settingsAjax"
+      auto
+      url="/api/settings"
+      method="post"
+      content-type="application/json"
+      handle-as="json"
+      last-response="{{settings}}">
     </iron-ajax>
     <app-location route="{{route}}"></app-location>
   </template>
@@ -79,6 +90,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           user: {
             type: Object,
             notify: true
+          },
+          settings: {
+            type: Object,
+            value: {
+              open_registration: false
+            }
           },
           error: String,
           invalid: {

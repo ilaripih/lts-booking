@@ -52,7 +52,7 @@
 		"monthnames_list": "tammikuu_helmikuu_maaliskuu_huhtikuu_toukokuu_kesäkuu_heinäkuu_elokuu_syyskuu_lokakuu_marraskuu_joulukuu",
 		"court_unavailable": "Kenttä ei ole vapaana valittuun aikaan",
 		"court_already_booked": "Kentällä on valittuun aikaan toinen varaus",
-		"missing_user_details": "Puutteelliset käyttäjätiedot. Täydennä tietosi Asetukset-sivulla.",
+		"missing_user_details": "Puutteelliset käyttäjätiedot. Täydennä tietosi Omat tiedot-sivulla.",
 		"my_bookings": "Omat varaukset",
 		"book_cancel_confirm": "Haluatko varmasti peruuttaa kenttävarauksen?",
 		"cancel_success": "Varaus peruutettiin onnistuneesti",
@@ -87,6 +87,9 @@
 		"max_bookings_exceeded": "Varausten maksimimäärä ylitetty",
 		"max_bookings": "Voimassaolevien varausten maksimimäärä per käyttäjä",
 		"cancellation_period": "Viimeinen peruutusmahdollisuus (tunteja ennen varauksen alkua)",
-		"weekly_recurring_booking": "Viikoittain toistuva varaus"
+		"weekly_recurring_booking": "Viikoittain toistuva varaus",
+		"open_registration_toggle": "Kuka tahansa voi rekisteröidä tunnuksen",
+		"my_settings": "Omat tiedot",
+		"open_registration_disallowed": "Vain pääkäyttäjä voi luoda uusia tunnuksia"
 	}
 }
