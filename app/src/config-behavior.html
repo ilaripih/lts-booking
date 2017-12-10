@@ -159,10 +159,16 @@
       str += ' ' + ConfigImpl._intToTime(ConfigImpl._getMinutes(ts));
       return str;
     },
-    _bookingTimes: function(beginStr, endStr) {
-      var begin = new Date(beginStr);
-      var end = new Date(endStr);
-      var str = ConfigImpl._formatDate(begin);
+    _bookingTimes: function(booking, localize) {
+      var begin = new Date(booking.begin);
+      var end = new Date(booking.end);
+      var str = '';
+      if (!('weekday' in booking) || booking.weekday == -1) {
+        str = ConfigImpl._formatDate(begin);
+      } else {
+        var wd = ConfigImpl._weekDaysShort(localize);
+        str = wd[booking.weekday];
+      }
       str += ' ' + ConfigImpl._intToTime(ConfigImpl._getMinutes(begin));
       str += ' - ' + ConfigImpl._intToTime(ConfigImpl._getMinutes(end));
       return str;

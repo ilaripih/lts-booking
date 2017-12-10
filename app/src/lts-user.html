@@ -78,7 +78,7 @@ Copyright (c) 2017 Ilari Pihlajisto
           <tbody>
             <template is="dom-repeat" items="[[bookings]]" as="booking">
               <tr>
-                <td><a href="/edit-booking/[[booking._id]]">[[_bookingTimes(booking.begin, booking.end)]]</a></td>
+                <td><a href="/edit-booking/[[booking._id]]">[[_bookingTimes(booking, localize)]]</a></td>
                 <td>[[_courtName(booking.court_id)]]</td>
                 <td hidden$="[[!isAdminUser]]">[[booking.title]]</td>
                 <td>[[_parseMongoTime(booking.paid_at)]]</td>
