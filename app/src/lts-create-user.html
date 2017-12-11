@@ -1,0 +1,49 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="./config-behavior.html">
+
+<dom-module id="lts-create-user">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+    </style>
+
+    <div class="card">
+      <div id="authenticated">
+        <h1>[[localize('create_user')]]</h1>
+        <p>[[localize('create_user_help')]]</p>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+
+        <div class="wrapper-btns">
+          <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+          <paper-button class="link" on-tap="cancel">[[localize('cancel')]]</paper-button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    class LtsCreateUser extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-create-user'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String
+        }, ConfigImpl.properties);
+      }
+    }
+
+    window.customElements.define(LtsCreateUser.is, LtsCreateUser);
+  </script>
+</dom-module>

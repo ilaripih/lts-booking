@@ -90,6 +90,8 @@
 		"weekly_recurring_booking": "Viikoittain toistuva varaus",
 		"open_registration_toggle": "Kuka tahansa voi rekisteröidä tunnuksen",
 		"my_settings": "Omat tiedot",
-		"open_registration_disallowed": "Vain pääkäyttäjä voi luoda uusia tunnuksia"
+		"open_registration_disallowed": "Vain pääkäyttäjä voi luoda uusia tunnuksia",
+		"create_user": "Luo käyttäjä",
+		"create_user_help": "Luo uudelle käyttäjälle tunnus ja salasana. Sen jälkeen käyttäjä voi itse antaa loput tiedot ja vaihtaa salasanansa."
 	}
 }
