@@ -197,7 +197,8 @@ func signupHandler(w http.ResponseWriter, r *http.Request, m map[string]interfac
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	if !settings.OpenRegistration {
+	isAdmin := (sess.Values["level"] == "admin")
+	if !settings.OpenRegistration && !isAdmin {
 		return http.StatusBadRequest, errors.New("open_registration_disallowed")
 	}
 
@@ -238,7 +239,9 @@ func signupHandler(w http.ResponseWriter, r *http.Request, m map[string]interfac
 		return http.StatusInternalServerError, err
 	}
 
-	saveSession(w, r, &user)
+	if !isAdmin {
+		saveSession(w, r, &user)
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	encoder := json.NewEncoder(w)

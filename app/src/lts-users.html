@@ -4,6 +4,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
 <link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
@@ -26,6 +27,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
     </style>
 
+    <app-location route="{{rootRoute}}"></app-location>
     <div class="card">
       <div id="authenticated">
         <h1>[[localize('users')]]</h1>
@@ -104,6 +106,18 @@ Copyright (c) 2017 Ilari Pihlajisto
             }
           },
         }, ConfigImpl.properties);
+      }
+
+      static get observers() {
+        return [
+          '_routeChanged(rootRoute)'
+        ];
+      }
+
+      _routeChanged(rootRoute) {
+        if (rootRoute.path == '/users') {
+          this.$.usersAjax.generateRequest();
+        }
       }
 
       toggleOpenRegistration(event) {

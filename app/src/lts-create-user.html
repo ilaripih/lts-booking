@@ -4,8 +4,12 @@ Copyright (c) 2017 Ilari Pihlajisto
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-create-user">
@@ -16,6 +20,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
     </style>
 
+    <app-location route="{{rootRoute}}"></app-location>
     <div class="card">
       <div id="authenticated">
         <h1>[[localize('create_user')]]</h1>
@@ -25,12 +30,27 @@ Copyright (c) 2017 Ilari Pihlajisto
           <p class="alert-error">[[localize(error)]]</p>
         </template>
 
+        <div id="inputs">
+          <paper-input id="username" type="text" label="[[localize('username')]]" value="{{formData.username}}" required auto-validate invalid="{{invalid.username}}"></paper-input>
+          <paper-input id="password" type="password" label="[[localize('password')]]" value="{{formData.password}}" required auto-validate minlength="8" invalid="{{invalid.password}}"></paper-input>
+        </div>
+
         <div class="wrapper-btns">
           <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
           <paper-button class="link" on-tap="cancel">[[localize('cancel')]]</paper-button>
         </div>
       </div>
     </div>
+
+    <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="postSave"></iron-a11y-keys>
+    <iron-ajax
+      id="registerAjax"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleRegisterResponse"
+      on-error="handleRegisterError">
+    </iron-ajax>
   </template>
 
   <script>
@@ -39,8 +59,61 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       static get properties() {
         return _.defaults({
-          error: String
+          error: String,
+          formData: {
+            type: Object,
+            value: {}
+          },
+          invalid: {
+            type: Object,
+            value: {}
+          }
         }, ConfigImpl.properties);
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.$.a11y.target = this.$.inputs;
+      }
+
+      _setReqBody() {
+        this.$.registerAjax.body = this.formData;
+      }
+
+      postSave() {
+        if (!this._isValid()) {
+          this.error = 'missing_parameter';
+          return;
+        }
+
+        this.$.registerAjax.url = '/api/signup';
+        this._setReqBody();
+        this.$.registerAjax.generateRequest();
+      }
+
+      _isValid() {
+        for (var key in this.invalid) {
+          if (this.invalid[key]) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      handleRegisterResponse(event) {
+        this.error = '';
+        this.formData = {};
+
+        this.set('rootRoute.path', '/users');
+      }
+
+      handleRegisterError(event) {
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
+      cancel() {
+        this.formData = {};
+        this.set('rootRoute.path', '/users');
       }
     }
 
