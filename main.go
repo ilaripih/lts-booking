@@ -29,6 +29,7 @@ type User struct {
 	Level string `json:"level" bson:"level"`
 	Password string `bson:"password" json:"-"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	Disabled bool `bson:"disabled" json:"disabled"`
 }
 
 type Court struct {
@@ -260,6 +261,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request, m map[string]interface
 	user, err := getUser(username)
 	if err != nil || !checkPasswordHash(password, user.Password) {
 		return http.StatusUnauthorized, errors.New("invalid_credentials")
+	}
+	if user.Disabled {
+		return http.StatusUnauthorized, errors.New("account_disabled")
 	}
 
 	saveSession(w, r, user)
@@ -935,6 +939,24 @@ func updateSettingsHandler(w http.ResponseWriter, r *http.Request, m map[string]
 	return http.StatusOK, nil
 }
 
+func updateUserDisabledHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+
+	if err := c.Update(bson.M{
+		"username": m["username"].(string),
+	}, bson.M{
+		"$set": bson.M{
+			"disabled": m["disabled"].(bool),
+		},
+	}); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
 func serveIndex(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, appDir + "/index.html")
 }
@@ -1028,6 +1050,7 @@ func main() {
 	http.HandleFunc("/api/users", myHandler(usersHandler, "admin"))
 	http.HandleFunc("/api/settings", myHandler(settingsHandler, ""))
 	http.HandleFunc("/api/update_settings", myHandler(updateSettingsHandler, "admin"))
+	http.HandleFunc("/api/update_user_disabled", myHandler(updateUserDisabledHandler, "admin", "username", "disabled"))
 
 	port := os.Getenv("LTS_BOOKING_PORT")
 	if port != "" {

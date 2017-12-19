@@ -54,6 +54,12 @@ Copyright (c) 2017 Ilari Pihlajisto
             <template class="header">[[localize('created_at')]]</template>
             <template>[[_parseMongoTime(item.created_at)]]</template>
           </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">[[localize('enabled')]]</template>
+            <template>
+              <paper-toggle-button data-username$="[[item.username]]" on-change="toggleUserDisabled" checked="{{!item.disabled}}"></paper-toggle-button>
+            </template>
+          </vaadin-grid-column>
         </vaadin-grid>
 
       </div>
@@ -84,6 +90,14 @@ Copyright (c) 2017 Ilari Pihlajisto
     <iron-ajax
       id="updateSettingsAjax"
       url="/api/update_settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-error="handleUpdateSettingsError">
+    </iron-ajax>
+    <iron-ajax
+      id="updateUserDisabledAjax"
+      url="/api/update_user_disabled"
       method="post"
       content-type="application/json"
       handle-as="text"
@@ -127,6 +141,14 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       handleUpdateSettingsError(event) {
         this.error = event.detail.request.xhr.response.trim();
+      }
+
+      toggleUserDisabled(event) {
+        this.$.updateUserDisabledAjax.body = {
+          username: event.target.dataset.username,
+          disabled: !event.target.checked
+        };
+        this.$.updateUserDisabledAjax.generateRequest();
       }
     }
 
