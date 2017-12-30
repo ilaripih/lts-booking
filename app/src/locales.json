@@ -94,6 +94,8 @@
 		"create_user": "Luo käyttäjä",
 		"create_user_help": "Luo uudelle käyttäjälle tunnus ja salasana. Sen jälkeen käyttäjä voi itse antaa loput tiedot ja vaihtaa salasanansa.",
 		"enabled": "Käytössä",
-		"account_disabled": "Käyttäjätili on lukittu. Vain pääkäyttäjä voi avata tilin."
+		"account_disabled": "Käyttäjätili on lukittu. Vain pääkäyttäjä voi avata tilin.",
+		"required_user_details": "Pakolliset käyttäjätiedot",
+		"required_user_details_updated": "Pakolliset käyttäjätiedot päivitettiin onnistuneesti"
 	}
 }

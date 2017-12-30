@@ -1,0 +1,85 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="./config-behavior.html">
+
+<dom-module id="lts-required-user-details">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      .wrapper-btns {
+        margin-top: 15px;
+      }
+
+      paper-button.link {
+        color: #757575;
+      }
+    </style>
+
+    <div class="card">
+      <div id="authenticated">
+        <h1>[[localize('required_user_details')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+        <template is="dom-if" if="[[success]]">
+          <p class="alert-success">[[localize(success)]]</p>
+        </template>
+
+        <div class="wrapper-btns">
+          <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+        </div>
+      </div>
+    </div>
+    <iron-ajax
+      id="saveAjax"
+      url="/api/update_required_user_details"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSaveResponse"
+      on-error="handleSaveError">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsRequiredUserDetails extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-required-user-details'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          success: String
+        }, ConfigImpl.properties);
+      }
+
+      postSave() {
+        this.$.saveAjax.body = {};
+        this.$.saveAjax.generateRequest();
+      }
+
+      handleSaveResponse(event) {
+        this.error = '';
+        this.success = 'required_user_details_updated';
+      }
+
+      handleSaveError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+    }
+
+    window.customElements.define(LtsRequiredUserDetails.is, LtsRequiredUserDetails);
+  </script>
+</dom-module>
