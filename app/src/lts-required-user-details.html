@@ -8,6 +8,10 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/iron-input/iron-input.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-required-user-details">
@@ -17,8 +21,17 @@ Copyright (c) 2017 Ilari Pihlajisto
         display: block;
       }
 
+      h3 {
+        margin-bottom: 2px;
+      }
+
       .wrapper-btns {
         margin-top: 15px;
+      }
+
+      .new_field_section {
+        border: 2px solid #dbdbdb;
+        padding: 6px;
       }
 
       paper-button.link {
@@ -36,6 +49,17 @@ Copyright (c) 2017 Ilari Pihlajisto
         <template is="dom-if" if="[[success]]">
           <p class="alert-success">[[localize(success)]]</p>
         </template>
+
+        <h3>[[localize('new_field')]]</h3>
+        <div class="new_field_section">
+          <paper-input id="new_field_name" type="text" label="[[localize('name')]]" value="{{newFieldName}}" required auto-validate></paper-input>
+          <paper-dropdown-menu label="[[localize('type')]]">
+            <paper-listbox slot="dropdown-content" class="dropdown-content" selected="{{newFieldType}}">
+              <paper-item>[[localize('text')]]</paper-item>
+              <paper-item>[[localize('dropdown_menu')]]</paper-item>
+            </paper-listbox>
+          </paper-dropdown-menu>
+        </div>
 
         <div class="wrapper-btns">
           <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
@@ -60,8 +84,18 @@ Copyright (c) 2017 Ilari Pihlajisto
       static get properties() {
         return _.defaults({
           error: String,
-          success: String
+          success: String,
+          newFieldType: Number,
+          newFieldName: String,
         }, ConfigImpl.properties);
+      }
+
+      constructor() {
+        super();
+
+        Polymer.RenderStatus.afterNextRender(this, function() {
+          this.newFieldType = 0;
+        });
       }
 
       postSave() {

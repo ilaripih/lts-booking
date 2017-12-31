@@ -96,6 +96,10 @@
 		"enabled": "Käytössä",
 		"account_disabled": "Käyttäjätili on lukittu. Vain pääkäyttäjä voi avata tilin.",
 		"required_user_details": "Pakolliset käyttäjätiedot",
-		"required_user_details_updated": "Pakolliset käyttäjätiedot päivitettiin onnistuneesti"
+		"required_user_details_updated": "Pakolliset käyttäjätiedot päivitettiin onnistuneesti",
+		"new_field": "Uusi kenttä",
+		"type": "Tyyppi",
+		"text": "Tekstikenttä",
+		"dropdown_menu": "Pudotusvalikko"
 	}
 }
