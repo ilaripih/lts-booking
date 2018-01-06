@@ -104,6 +104,9 @@
 		"add": "Lisää",
 		"delete": "Poista",
 		"options": "Vaihtoehdot",
-		"options_comma_separated": "Vaihtoehdot (erottele pilkulla)"
+		"options_comma_separated": "Vaihtoehdot (erottele pilkulla)",
+		"dependency": "Riippuvuus",
+		"dependency_field": "Riippuvuus (kenttä)",
+		"dependency_option": "Riippuvuus (valinta)"
 	}
 }

@@ -15,6 +15,8 @@
     "src/lts-settings.html",
     "src/lts-user.html",
     "src/lts-users.html",
+    "src/lts-create-user.html",
+    "src/lts-required-user-details.html",
     "src/lts-view404.html",
     "src/my-icons.html",
     "src/shared-styles.html"

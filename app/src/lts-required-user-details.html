@@ -39,8 +39,11 @@ Copyright (c) 2017 Ilari Pihlajisto
         background-color: var(--paper-red-500);
         color: white;
         height: 1.2em;
-        font-size: 0.9em;
         padding-top: 12px;
+      }
+
+      vaadin-grid {
+        font-size: 0.9em;
       }
 
       .wrapper-btns {
@@ -82,6 +85,22 @@ Copyright (c) 2017 Ilari Pihlajisto
           <template is="dom-if" if="[[showDropdownEditor]]">
             <paper-input id="new_field_options" type="text" label="[[localize('options_comma_separated')]]" value="{{newFieldOptions}}"></paper-input>
           </template>
+          <div>
+            <paper-dropdown-menu label="[[localize('dependency_field')]]">
+              <paper-listbox slot="dropdown-content" class="dropdown-content" selected="{{depField}}">
+                <template is="dom-repeat" items="[[dropdownFields]]">
+                  <paper-item>[[item.name]]</paper-item>
+                </template>
+              </paper-listbox>
+            </paper-dropdown-menu>
+            <paper-dropdown-menu label="[[localize('dependency_option')]]">
+              <paper-listbox slot="dropdown-content" class="dropdown-content" selected="{{depOption}}">
+                <template is="dom-repeat" items="[[depOptions]]">
+                  <paper-item>[[item]]</paper-item>
+                </template>
+              </paper-listbox>
+            </paper-dropdown-menu>
+          </div>
           <br />
           <paper-button raised class="custom green" on-tap="addField" disabled="[[addFieldDisabled]]">[[localize('add')]]</paper-button>
         </div>
@@ -97,9 +116,13 @@ Copyright (c) 2017 Ilari Pihlajisto
             <template>[[intToType(item.type)]]</template>
           </vaadin-grid-column>
           <vaadin-grid-column>
-              <template class="header">[[localize('options')]]</template>
-              <template>[[optionsText(item.options)]]</template>
-            </vaadin-grid-column>
+            <template class="header">[[localize('options')]]</template>
+            <template>[[optionsText(item.options)]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">[[localize('dependency')]]</template>
+            <template>[[dependencyText(item.dependency)]]</template>
+          </vaadin-grid-column>
           <vaadin-grid-column flex-grow="0">
             <template class="header"></template>
             <template>
@@ -139,6 +162,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           newFieldType: Number,
           newFieldName: String,
           newFieldOptions: String,
+          depField: Number,
+          depOption: Number,
           fields: {
             type: Array,
             value: []
@@ -152,6 +177,16 @@ Copyright (c) 2017 Ilari Pihlajisto
             type: Boolean,
             value: false,
             computed: 'computeShowDropdownEditor(newFieldType)'
+          },
+          dropdownFields: {
+            type: Array,
+            value: [],
+            computed: 'computeDropdownFields(fields.splices)'
+          },
+          depOptions: {
+            type: Array,
+            value: [],
+            computed: 'computeDepOptions(depField)'
           }
         }, ConfigImpl.properties);
       }
@@ -183,6 +218,27 @@ Copyright (c) 2017 Ilari Pihlajisto
         return fieldType == 1;
       }
 
+      computeDropdownFields(change) {
+        if (!change) {
+          return [];
+        }
+        var ret = this.fields.filter(function(field) {
+          return field.type == 1;
+        });
+        return [{
+          name: '',
+          type: 0,
+          options: []
+        }].concat(ret);
+      }
+
+      computeDepOptions(field) {
+        if (field < this.fields.length) {
+          return [];
+        }
+        return this.fields[field - 1].options;
+      }
+
       intToType(val) {
         if (val == 0) {
           return this.localize('text');
@@ -192,6 +248,13 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       optionsText(options) {
         return options.join(', ');
+      }
+
+      dependencyText(dependency) {
+        if (!dependency) {
+          return '';
+        }
+        return dependency.name + ' = ' + dependency.value;
       }
 
       addField() {
@@ -206,9 +269,21 @@ Copyright (c) 2017 Ilari Pihlajisto
           });
         }
 
+        if (this.depField > 0 && this.depOption >= 0) {
+          const f = this.fields[this.depField - 1];
+          if (this.depOption < f.options.length) {
+            val.dependency = {
+              name: f.name,
+              value: f.options[this.depOption]
+            };
+          }
+        }
+
         this.push('fields', val);
         this.newFieldName = '';
         this.newFieldOptions = '';
+        this.depField = -1;
+        this.depOption = -1;
       }
 
       deleteField() {
