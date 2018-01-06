@@ -115,11 +115,11 @@ Copyright (c) 2017 Ilari Pihlajisto
             <template class="header">[[localize('type')]]</template>
             <template>[[intToType(item.type)]]</template>
           </vaadin-grid-column>
-          <vaadin-grid-column>
+          <vaadin-grid-column flex-grow="2">
             <template class="header">[[localize('options')]]</template>
             <template>[[optionsText(item.options)]]</template>
           </vaadin-grid-column>
-          <vaadin-grid-column>
+          <vaadin-grid-column flex-grow="2">
             <template class="header">[[localize('dependency')]]</template>
             <template>[[dependencyText(item.dependency)]]</template>
           </vaadin-grid-column>

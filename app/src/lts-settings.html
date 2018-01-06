@@ -8,6 +8,10 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/iron-input/iron-input.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-settings">
@@ -47,11 +51,36 @@ Copyright (c) 2017 Ilari Pihlajisto
         <paper-input id="postal_code" type="text" label="[[localize('postal_code')]]" value="{{formData.postal_code}}" required auto-validate invalid="{{invalid.postal_code}}"></paper-input>
         <paper-input id="phone_number" type="text" label="[[localize('phone_number')]]" value="{{formData.phone_number}}" required auto-validate invalid="{{invalid.phone_number}}"></paper-input>
 
+        <template is="dom-repeat" items="[[fields]]" filter="isFieldVisible" observe="selected">
+          <template is="dom-if" if="[[!item.type]]">
+            <paper-input type="text" label="[[item.name]]" value="{{item.value}}" required auto-validate></paper-input>
+          </template>
+          <template is="dom-if" if="[[item.type]]">
+            <paper-dropdown-menu label="[[item.name]]">
+              <paper-listbox slot="dropdown-content" class="dropdown-content" selected="{{item.selected}}">
+                <template is="dom-repeat" items="[[item.options]]" as="option">
+                  <paper-item>[[option]]</paper-item>
+                </template>
+              </paper-listbox>
+            </paper-dropdown-menu>
+          </template>
+        </template>
+
         <div class="wrapper-btns">
           <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
         </div>
       </div>
     </div>
+    <iron-ajax
+      id="settingsAjax"
+      auto
+      url="/api/settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSettingsResponse"
+      on-error="handleError">
+    </iron-ajax>
     <iron-ajax
       id="saveAjax"
       url="/api/update_user_data"
@@ -59,7 +88,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       content-type="application/json"
       handle-as="text"
       on-response="handleSaveResponse"
-      on-error="handleSaveError">
+      on-error="handleError">
     </iron-ajax>
   </template>
 
@@ -73,6 +102,7 @@ Copyright (c) 2017 Ilari Pihlajisto
             type: Object,
             value: {}
           },
+          fields: Array,
           user: {
             type: Object,
             notify: true
@@ -107,6 +137,23 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       _setReqBody() {
         this.$.saveAjax.body = this.formData;
+        if (!this.fields || this.fields.length == 0) {
+          return;
+        }
+        this.$.saveAjax.body.user_details = this.fields.filter(function(field) {
+          return this.isFieldVisible(field);
+        }.bind(this)).map(function(field) {
+          if (field.type == 0) {
+            return {
+              name: field.name,
+              value: field.value
+            };
+          }
+          return {
+            name: field.name,
+            value: field.options[field.selected]
+          };
+        }.bind(this));
       }
 
       _isValid() {
@@ -115,11 +162,43 @@ Copyright (c) 2017 Ilari Pihlajisto
             return false;
           }
         }
+
+        if (this.fields.find(function(field) {
+          if (!this.isFieldVisible(field)) {
+            return false;
+          }
+          if (field.type == 0) {
+            return field.value.length == 0;
+          } else if (field.type == 1) {
+            return field.selected == -1;
+          }
+          return false;
+        }.bind(this))) {
+          return false;
+        }
         return true;
+      }
+
+      isFieldVisible(field) {
+        const fields = this.fields;
+        if (!field.dependency || !field.dependency.name || !field.dependency.value) {
+          return true;
+        }
+        return fields.find(function(f) {
+          if (f.type != 1 || f.name != field.dependency.name) {
+            return false;
+          }
+          const optIndex = f.options.indexOf(field.dependency.value);
+          if (optIndex == -1) {
+            return false;
+          }
+          return f.selected == optIndex;
+        });
       }
 
       postSave() {
         if (!this._isValid()) {
+          this.success = '';
           this.error = 'missing_parameter';
           return;
         }
@@ -128,17 +207,31 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.$.saveAjax.generateRequest();
       }
 
+      handleSettingsResponse(event) {
+        const ret = JSON.parse(event.detail.response);
+        const fields = ret.user_details || [];
+        this.set('fields', fields.map(function(field) {
+          var ret = field;
+          if (ret.type == 1) {
+            ret.selected = 0;
+          } else {
+            ret.value = '';
+          }
+          return ret;
+        }));
+      }
+
+      handleError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
       handleSaveResponse(event) {
         this.error = '';
         this.success = 'user_data_updated';
         for (var key in this.formData) {
           this.set('user.' + key, this.formData[key]);
         }
-      }
-
-      handleSaveError(event) {
-        this.success = '';
-        this.error = event.detail.request.xhr.response.trim();
       }
 
       connectedCallback() {
