@@ -4,6 +4,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/iron-input/iron-input.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
@@ -12,6 +13,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-required-user-details">
@@ -25,13 +27,30 @@ Copyright (c) 2017 Ilari Pihlajisto
         margin-bottom: 2px;
       }
 
+      paper-button.green {
+        background-color: var(--paper-green-500);
+        color: white;
+        height: 1.2em;
+        font-size: 0.9em;
+        padding-top: 12px;
+      }
+
+      paper-button.red {
+        background-color: var(--paper-red-500);
+        color: white;
+        height: 1.2em;
+        font-size: 0.9em;
+        padding-top: 12px;
+      }
+
       .wrapper-btns {
         margin-top: 15px;
       }
 
       .new_field_section {
-        border: 2px solid #dbdbdb;
-        padding: 6px;
+        border: 1px solid #dbdbdb;
+        padding: 12px;
+        padding-top: 0;
       }
 
       paper-button.link {
@@ -39,6 +58,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
     </style>
 
+    <app-location route="{{rootRoute}}"></app-location>
     <div class="card">
       <div id="authenticated">
         <h1>[[localize('required_user_details')]]</h1>
@@ -52,17 +72,48 @@ Copyright (c) 2017 Ilari Pihlajisto
 
         <h3>[[localize('new_field')]]</h3>
         <div class="new_field_section">
-          <paper-input id="new_field_name" type="text" label="[[localize('name')]]" value="{{newFieldName}}" required auto-validate></paper-input>
+          <paper-input id="new_field_name" type="text" label="[[localize('name')]]" value="{{newFieldName}}"></paper-input>
           <paper-dropdown-menu label="[[localize('type')]]">
             <paper-listbox slot="dropdown-content" class="dropdown-content" selected="{{newFieldType}}">
               <paper-item>[[localize('text')]]</paper-item>
               <paper-item>[[localize('dropdown_menu')]]</paper-item>
             </paper-listbox>
           </paper-dropdown-menu>
+          <template is="dom-if" if="[[showDropdownEditor]]">
+            <paper-input id="new_field_options" type="text" label="[[localize('options_comma_separated')]]" value="{{newFieldOptions}}"></paper-input>
+          </template>
+          <br />
+          <paper-button raised class="custom green" on-tap="addField" disabled="[[addFieldDisabled]]">[[localize('add')]]</paper-button>
         </div>
+        <br />
+
+        <vaadin-grid aria-label="[[localize('fields')]]" items="[[fields]]">
+          <vaadin-grid-column>
+            <template class="header">[[localize('name')]]</template>
+            <template>[[item.name]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">[[localize('type')]]</template>
+            <template>[[intToType(item.type)]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+              <template class="header">[[localize('options')]]</template>
+              <template>[[optionsText(item.options)]]</template>
+            </vaadin-grid-column>
+          <vaadin-grid-column flex-grow="0">
+            <template class="header"></template>
+            <template>
+              <paper-button raised class="custom red" on-tap="deleteField" data-index$="[[index]]">
+                [[localize('delete')]]
+              </paper-button>
+            </template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+        </vaadin-grid>
 
         <div class="wrapper-btns">
           <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+          <paper-button class="link" on-tap="cancel">[[localize('cancel')]]</paper-button>
         </div>
       </div>
     </div>
@@ -87,6 +138,21 @@ Copyright (c) 2017 Ilari Pihlajisto
           success: String,
           newFieldType: Number,
           newFieldName: String,
+          newFieldOptions: String,
+          fields: {
+            type: Array,
+            value: []
+          },
+          addFieldDisabled: {
+            type: Boolean,
+            value: true,
+            computed: 'computeAddFieldDisabled(newFieldName, newFieldType, newFieldOptions)'
+          },
+          showDropdownEditor: {
+            type: Boolean,
+            value: false,
+            computed: 'computeShowDropdownEditor(newFieldType)'
+          }
         }, ConfigImpl.properties);
       }
 
@@ -96,6 +162,58 @@ Copyright (c) 2017 Ilari Pihlajisto
         Polymer.RenderStatus.afterNextRender(this, function() {
           this.newFieldType = 0;
         });
+      }
+
+      computeAddFieldDisabled(name, type, options) {
+        if (!name || name.length == 0) {
+          return true;
+        }
+        if (this.fields.find(function(row) {
+          return row.name == name;
+        })) {
+          return true;
+        }
+        if (type == 1 && (!options || options.trim().length == 0)) {
+          return true;
+        }
+        return false;
+      }
+
+      computeShowDropdownEditor(fieldType) {
+        return fieldType == 1;
+      }
+
+      intToType(val) {
+        if (val == 0) {
+          return this.localize('text');
+        }
+        return this.localize('dropdown_menu');
+      }
+
+      optionsText(options) {
+        return options.join(', ');
+      }
+
+      addField() {
+        var val = {
+          name: this.newFieldName,
+          type: this.newFieldType,
+          options: []
+        };
+        if (this.newFieldType == 1) {
+          val.options = this.newFieldOptions.split(',').map(function(item) {
+            return item.trim();
+          });
+        }
+
+        this.push('fields', val);
+        this.newFieldName = '';
+        this.newFieldOptions = '';
+      }
+
+      deleteField() {
+        const index = event.target.dataset.index;
+        this.splice('fields', index, 1);
       }
 
       postSave() {
@@ -111,6 +229,10 @@ Copyright (c) 2017 Ilari Pihlajisto
       handleSaveError(event) {
         this.success = '';
         this.error = event.detail.request.xhr.response.trim();
+      }
+
+      cancel() {
+        this.set('rootRoute.path', '/users');
       }
     }
 
