@@ -30,6 +30,7 @@ type User struct {
 	Password string `bson:"password" json:"-"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 	Disabled bool `bson:"disabled" json:"disabled"`
+	Custom []CustomUserDetail `json:"custom" bson:"custom"`
 }
 
 type Court struct {
@@ -61,9 +62,22 @@ type Booking struct {
 	WeekDay int `bson:"weekday" json:"weekday"`
 }
 
+type UserDetailDependency struct {
+	Name string `json:"name" bson:"name"`
+	Value string `json:"value" bson:"value"`
+}
+
+type CustomUserDetail struct {
+	Name string `json:"name" bson:"name"`
+	Type int `json:"type" bson:"type"`
+	Options []string `json:"options" bson:"options"`
+	Dependency UserDetailDependency `json:"dependency" bson:"dependency"`
+}
+
 type Settings struct {
 	Id bson.ObjectId `json:"_id" bson:"_id"`
 	OpenRegistration bool `json:"open_registration" bson:"open_registration"`
+	UserDetails []CustomUserDetail `json:"user_details" bson:"user_details"`
 }
 
 var mongo *mgo.Session
@@ -930,6 +944,10 @@ func updateSettingsHandler(w http.ResponseWriter, r *http.Request, m map[string]
 	obj := bson.M{}
 	if val, ok := m["open_registration"]; ok {
 		obj["open_registration"] = val
+	}
+
+	if val, ok := m["user_details"]; ok {
+		obj["user_details"] = val
 	}
 
 	if _, err := c.Upsert(nil, bson.M{"$set": obj}); err != nil {

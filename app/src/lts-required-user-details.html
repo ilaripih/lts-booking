@@ -141,13 +141,23 @@ Copyright (c) 2017 Ilari Pihlajisto
       </div>
     </div>
     <iron-ajax
-      id="saveAjax"
-      url="/api/update_required_user_details"
+      id="settingsAjax"
+      auto
+      url="/api/settings"
       method="post"
       content-type="application/json"
       handle-as="text"
-      on-response="handleSaveResponse"
-      on-error="handleSaveError">
+      on-response="handleSettingsResponse"
+      on-error="handleError">
+    </iron-ajax>
+    <iron-ajax
+      id="updateSettingsAjax"
+      url="/api/update_settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleUpdateSettingsResponse"
+      on-error="handleError">
     </iron-ajax>
   </template>
 
@@ -251,7 +261,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
 
       dependencyText(dependency) {
-        if (!dependency) {
+        if (!dependency || !dependency.name || !dependency.value) {
           return '';
         }
         return dependency.name + ' = ' + dependency.value;
@@ -292,21 +302,30 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
 
       postSave() {
-        this.$.saveAjax.body = {};
-        this.$.saveAjax.generateRequest();
+        this.$.updateSettingsAjax.body = {
+          user_details: this.fields
+        };
+        this.$.updateSettingsAjax.generateRequest();
       }
 
-      handleSaveResponse(event) {
+      handleSettingsResponse(event) {
+        const ret = JSON.parse(event.detail.response);
+        const fields = ret.user_details || [];
+        this.set('fields', fields);
+      }
+
+      handleUpdateSettingsResponse(event) {
         this.error = '';
         this.success = 'required_user_details_updated';
       }
 
-      handleSaveError(event) {
+      handleError(event) {
         this.success = '';
         this.error = event.detail.request.xhr.response.trim();
       }
 
       cancel() {
+        this.$.settingsAjax.generateRequest();
         this.set('rootRoute.path', '/users');
       }
     }
