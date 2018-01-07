@@ -243,7 +243,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
 
       computeDepOptions(field) {
-        if (field < this.fields.length) {
+        if (field <= 0 || field > this.fields.length) {
           return [];
         }
         return this.fields[field - 1].options;
