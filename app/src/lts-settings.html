@@ -51,7 +51,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         <paper-input id="postal_code" type="text" label="[[localize('postal_code')]]" value="{{formData.postal_code}}" required auto-validate invalid="{{invalid.postal_code}}"></paper-input>
         <paper-input id="phone_number" type="text" label="[[localize('phone_number')]]" value="{{formData.phone_number}}" required auto-validate invalid="{{invalid.phone_number}}"></paper-input>
 
-        <template is="dom-repeat" items="[[fields]]" filter="isFieldVisible" observe="selected">
+        <template is="dom-repeat" items="[[fields]]" filter="isFieldVisible" observe="selected" mutable-data>
           <template is="dom-if" if="[[!item.type]]">
             <paper-input type="text" label="[[item.name]]" value="{{item.value}}" required auto-validate></paper-input>
           </template>
@@ -232,19 +232,23 @@ Copyright (c) 2017 Ilari Pihlajisto
           return;
         }
 
-        this.fields = this.fields.map(function(field) {
+        this.fields.forEach(function(field, index) {
           const userData = this.custom.find(function(f) {
             return f.name == field.name;
           });
           if (userData) {
             if (field.type == 0) {
-              field.value = userData.value;
+              this.set('fields.' + index + '.value', userData.value);
             } else if (field.type == 1) {
-              field.selected = field.options.indexOf(userData.value);
+              this.set('fields.' + index + '.selected', field.options.indexOf(userData.value));
+            }
+          } else {
+            if (field.type == 0) {
+              this.set('fields.' + index + '.value', '');
+            } else if (field.type == 1) {
+              this.set('fields.' + index + '.selected', 0);
             }
           }
-
-          return field;
         }.bind(this));
       }
 
@@ -256,16 +260,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       handleSettingsResponse(event) {
         const ret = JSON.parse(event.detail.response);
-        const fields = ret.user_details || [];
-        this.set('fields', fields.map(function(field) {
-          var ret = field;
-          if (ret.type == 1) {
-            ret.selected = 0;
-          } else {
-            ret.value = '';
-          }
-          return ret;
-        }));
+        this.fields = ret.user_details || [];
 
         this.setCustomValues();
       }
