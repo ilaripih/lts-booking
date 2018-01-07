@@ -61,6 +61,12 @@ Copyright (c) 2017 Ilari Pihlajisto
               <td><strong>[[localize('phone_number')]]</strong></td>
               <td>[[user.phone_number]]</td>
             </tr>
+            <template is="dom-repeat" items="[[user.custom]]">
+              <tr>
+                <td><strong>[[item.name]]</strong></td>
+                <td>[[item.value]]</td>
+              </tr>
+            </template>
           </tbody>
         </table>
 
