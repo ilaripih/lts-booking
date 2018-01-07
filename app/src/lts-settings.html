@@ -72,6 +72,15 @@ Copyright (c) 2017 Ilari Pihlajisto
       </div>
     </div>
     <iron-ajax
+      id="userDetailsAjax"
+      url="/api/user_details"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleUserDetailsResponse"
+      on-error="handleError">
+    </iron-ajax>
+    <iron-ajax
       id="settingsAjax"
       auto
       url="/api/settings"
@@ -107,6 +116,7 @@ Copyright (c) 2017 Ilari Pihlajisto
             type: Object,
             notify: true
           },
+          custom: Array,
           error: String,
           success: String,
           invalid: {
@@ -125,9 +135,19 @@ Copyright (c) 2017 Ilari Pihlajisto
       _userChanged(user) {
         if (!user) {
           this.formData = {};
+          this.fields = this.fields.map(function(field) {
+            var ret = field;
+            if (ret.type == 1) {
+              ret.selected = 0;
+            } else {
+              ret.value = '';
+            }
+            return ret;
+          });
           return;
         }
 
+        this.$.userDetailsAjax.generateRequest();
         this.set('formData.name', user.name);
         this.set('formData.email', user.email);
         this.set('formData.street_address', user.street_address);
@@ -140,7 +160,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         if (!this.fields || this.fields.length == 0) {
           return;
         }
-        this.$.saveAjax.body.user_details = this.fields.filter(function(field) {
+        this.$.saveAjax.body.custom = this.fields.filter(function(field) {
           return this.isFieldVisible(field);
         }.bind(this)).map(function(field) {
           if (field.type == 0) {
@@ -207,6 +227,33 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.$.saveAjax.generateRequest();
       }
 
+      setCustomValues() {
+        if (!this.fields || !this.custom) {
+          return;
+        }
+
+        this.fields = this.fields.map(function(field) {
+          const userData = this.custom.find(function(f) {
+            return f.name == field.name;
+          });
+          if (userData) {
+            if (field.type == 0) {
+              field.value = userData.value;
+            } else if (field.type == 1) {
+              field.selected = field.options.indexOf(userData.value);
+            }
+          }
+
+          return field;
+        }.bind(this));
+      }
+
+      handleUserDetailsResponse(event) {
+        this.custom = JSON.parse(event.detail.response).custom;
+
+        this.setCustomValues();
+      }
+
       handleSettingsResponse(event) {
         const ret = JSON.parse(event.detail.response);
         const fields = ret.user_details || [];
@@ -219,6 +266,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           }
           return ret;
         }));
+
+        this.setCustomValues();
       }
 
       handleError(event) {

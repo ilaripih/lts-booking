@@ -18,6 +18,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type CustomField struct {
+	Name string `json:"name" bson:"name"`
+	Value string `json:"value" bson:"value"`
+}
+
 type User struct {
 	Username string `json:"username" bson:"username"`
 	Name string `json:"name" bson:"name"`
@@ -30,7 +35,7 @@ type User struct {
 	Password string `bson:"password" json:"-"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 	Disabled bool `bson:"disabled" json:"disabled"`
-	Custom []CustomUserDetail `json:"custom" bson:"custom"`
+	Custom []CustomField `json:"custom" bson:"custom"`
 }
 
 type Court struct {
@@ -344,17 +349,22 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 	sess.Values["phone_number"] = phoneNumber
 	sess.Save(r, w)
 
-	s := mongo.Copy()
-	defer s.Close()
-	c := s.DB("").C("users")
-
-	if err := c.Update(bson.M{"username": sess.Values["username"]}, bson.M{"$set": bson.M{
+	updateObj := bson.M{
 		"name": name,
 		"email": email,
 		"street_address": streetAddress,
 		"postal_code": postalCode,
 		"phone_number": phoneNumber,
-	}}); err != nil {
+	}
+	if val, ok := m["custom"]; ok {
+		updateObj["custom"] = val
+	}
+
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+
+	if err := c.Update(bson.M{"username": sess.Values["username"]}, bson.M{"$set": updateObj}); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -921,6 +931,25 @@ func usersHandler(w http.ResponseWriter, r *http.Request, m map[string]interface
 	return http.StatusOK, nil
 }
 
+func userDetailsHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+
+	var user User
+	if err := c.Find(bson.M{"username": sess.Values["username"]}).One(&user); err != nil {
+		return http.StatusNotFound, err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+	if err := encoder.Encode(user); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
 func settingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	settings, err := getSettings()
 	if err != nil {
@@ -1066,6 +1095,7 @@ func main() {
 		"current_password", "new_password"))
 	http.HandleFunc("/api/user", myHandler(userHandler, "admin", "username"))
 	http.HandleFunc("/api/users", myHandler(usersHandler, "admin"))
+	http.HandleFunc("/api/user_details", myHandler(userDetailsHandler, "user"))
 	http.HandleFunc("/api/settings", myHandler(settingsHandler, ""))
 	http.HandleFunc("/api/update_settings", myHandler(updateSettingsHandler, "admin"))
 	http.HandleFunc("/api/update_user_disabled", myHandler(updateUserDisabledHandler, "admin", "username", "disabled"))
