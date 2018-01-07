@@ -76,7 +76,7 @@ type CustomUserDetail struct {
 	Name string `json:"name" bson:"name"`
 	Type int `json:"type" bson:"type"`
 	Options []string `json:"options" bson:"options"`
-	Dependency UserDetailDependency `json:"dependency" bson:"dependency"`
+	Dependency *UserDetailDependency `json:"dependency" bson:"dependency"`
 }
 
 type Settings struct {
@@ -677,6 +677,49 @@ func hasFullUserDetails(sess *sessions.Session) bool {
 		}
 	}
 
+	settings, err := getSettings()
+	if err != nil || len(settings.UserDetails) == 0 {
+		return true
+	}
+
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+	var user User
+	if err := c.Find(bson.M{"username": sess.Values["username"]}).One(&user); err != nil {
+		return false
+	}
+
+	for _, detail := range settings.UserDetails {
+		userVal := ""
+		for _, val := range user.Custom {
+			if val.Name == detail.Name {
+				userVal = val.Value
+				break
+			}
+		}
+
+		if detail.Dependency == nil || len(detail.Dependency.Name) == 0 {
+			if userVal == "" {
+				return false
+			}
+		} else {
+			dependencyVal := ""
+			for _, val := range user.Custom {
+				if val.Name == detail.Dependency.Name {
+					dependencyVal = val.Value
+					break
+				}
+			}
+			if dependencyVal == "" {
+				return false
+			}
+			if dependencyVal == detail.Dependency.Value && userVal == "" {
+				return false
+			}
+		}
+	}
+
 	return true
 }
 
@@ -712,7 +755,8 @@ func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (b
 
 var bookHandlerMutex sync.Mutex
 func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
-	if !hasFullUserDetails(sess) {
+	isAdmin := (sess.Values["level"] == "admin")
+	if !isAdmin && !hasFullUserDetails(sess) {
 		return http.StatusUnauthorized, errors.New("missing_user_details")
 	}
 
@@ -769,7 +813,6 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 		return http.StatusBadRequest, errors.New("court_unavailable")
 	}
 
-	isAdmin := (sess.Values["level"] == "admin")
 	if !isAdmin && court.MaxBookingLength * 60 < (endNum - beginNum) {
 		return http.StatusBadRequest, errors.New("max_booking_length_exceeded")
 	}
