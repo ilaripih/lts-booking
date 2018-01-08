@@ -107,6 +107,9 @@
 		"options_comma_separated": "Vaihtoehdot (erottele pilkulla)",
 		"dependency": "Riippuvuus",
 		"dependency_field": "Riippuvuus (kenttä)",
-		"dependency_option": "Riippuvuus (valinta)"
+		"dependency_option": "Riippuvuus (valinta)",
+		"groups": "Kategoriat",
+		"enter_group_name": "Kirjoita kategorian nimi",
+		"group_delete_confirm": "Haluatko varmasti poistaa kategorian?"
 	}
 }

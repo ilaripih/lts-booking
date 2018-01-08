@@ -4,10 +4,11 @@ Copyright (c) 2017 Ilari Pihlajisto
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-courts">
@@ -17,20 +18,35 @@ Copyright (c) 2017 Ilari Pihlajisto
         display: block;
       }
 
-      paper-fab {
-        position: fixed;
-        right: 25px;
-        bottom: 30px;
+      paper-button.green {
+        background-color: var(--paper-green-500);
+        color: white;
+        height: 1.2em;
+        font-size: 0.9em;
+        padding-top: 12px;
       }
     </style>
 
+    <app-location route="{{rootRoute}}"></app-location>
     <div class="card">
       <div id="authenticated">
-        <h1>[[localize('courts')]]</h1>
-
         <template is="dom-if" if="[[error]]">
           <p class="alert-error">[[localize(error)]]</p>
         </template>
+
+        <h1>[[localize('groups')]]</h1>
+
+        <ul>
+          <template is="dom-repeat" items="[[groups]]">
+            <li>
+              <span>[[item]]</span>
+              <paper-icon-button data-index$="[[index]]" icon="delete" on-tap="deleteGroup"></paper-icon-button>
+            </li>
+          </template>
+        </ul>
+        <paper-button raised class="custom green" on-tap="addGroup" disabled="[[addGroupDisabled]]">[[localize('add')]]</paper-button>
+
+        <h1>[[localize('courts')]]</h1>
 
         <template is="dom-repeat" items="[[courts]]">
           <div>
@@ -38,10 +54,7 @@ Copyright (c) 2017 Ilari Pihlajisto
             <paper-icon-button data-index$="[[index]]" data-db-id$="[[item._id]]" icon="delete" on-tap="deleteCourt"></paper-icon-button>
           </div>
         </template>
-
-        <a href="court/new">
-          <paper-fab icon="add"></paper-fab>
-        </a>
+        <paper-button raised class="custom green" on-tap="addCourt">[[localize('add')]]</paper-button>
       </div>
     </div>
 
@@ -66,6 +79,10 @@ Copyright (c) 2017 Ilari Pihlajisto
           courts: {
             type: Array,
             notify: true
+          },
+          groups: {
+            type: Array,
+            value: []
           }
         }, ConfigImpl.properties);
       }
@@ -82,6 +99,15 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.$.deleteCourtAjax.generateRequest();
       }
 
+      deleteGroup(event) {
+        if (!confirm(this.localize('group_delete_confirm'))) {
+          return;
+        }
+
+        const index = event.target.dataset.index;
+        this.splice('groups', index, 1);
+      }
+
       handleDeleteCourtError(event) {
         this.error = event.detail.request.xhr.response.trim();
       }
@@ -91,6 +117,17 @@ Copyright (c) 2017 Ilari Pihlajisto
 
         this.splice('courts', this.courtToDelete, 1);
         this.courtToDelete = null;
+      }
+
+      addCourt() {
+        this.set('rootRoute.path', '/court/new');
+      }
+
+      addGroup() {
+        const name = window.prompt(this.localize('enter_group_name'));
+        if (name) {
+          this.push('groups', name);
+        }
       }
     }
 
