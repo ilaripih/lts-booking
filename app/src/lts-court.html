@@ -38,6 +38,13 @@ Copyright (c) 2017 Ilari Pihlajisto
         width: 60px;
       }
 
+      .divider {
+        position: relative;
+        top: -20px;
+        margin-left: 6px;
+        margin-right: 6px;
+      }
+
       paper-button.link {
         color: #757575;
       }
@@ -71,19 +78,19 @@ Copyright (c) 2017 Ilari Pihlajisto
         <div class="availability">
           <label>[[localize('available_week_days')]]</label>
           <paper-input id="weekDaysOpen" type="text" maxlength="5" minlength="5" label="" value="{{formData.week_days_open}}" required auto-validate invalid="{{invalid.week_days_open}}"></paper-input>
-          <span> _ </span>
+          <span class="divider"> _ </span>
           <paper-input id="weekDaysClose" type="text" maxlength="5" minlength="5" label="" value="{{formData.week_days_close}}" required auto-validate invalid="{{invalid.week_days_close}}"></paper-input>
         </div>
         <div class="availability">
           <label>[[localize('available_saturday')]]</label>
           <paper-input id="saturdayOpen" type="text" maxlength="5" minlength="5" label="" value="{{formData.saturday_open}}" required auto-validate invalid="{{invalid.saturday_open}}"></paper-input>
-          <span> _ </span>
+          <span class="divider"> _ </span>
           <paper-input id="saturdayClose" type="text" maxlength="5" minlength="5" label="" value="{{formData.saturday_close}}" required auto-validate invalid="{{invalid.saturday_close}}"></paper-input>
         </div>
         <div class="availability">
           <label>[[localize('available_sunday')]]</label>
           <paper-input id="sundayOpen" type="text" maxlength="5" minlength="5" label="" value="{{formData.sunday_open}}" required auto-validate invalid="{{invalid.sunday_open}}"></paper-input>
-          <span> _ </span>
+          <span class="divider"> _ </span>
           <paper-input id="sundayClose" type="text" maxlength="5" minlength="5" label="" value="{{formData.sunday_close}}" required auto-validate invalid="{{invalid.sunday_close}}"></paper-input>
         </div>
 
