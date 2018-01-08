@@ -65,7 +65,26 @@ Copyright (c) 2017 Ilari Pihlajisto
       content-type="application/json"
       handle-as="text"
       on-response="handleDeleteCourtResponse"
-      on-error="handleDeleteCourtError">
+      on-error="handleError">
+    </iron-ajax>
+    <iron-ajax
+      id="settingsAjax"
+      auto
+      url="/api/settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSettingsResponse"
+      on-error="handleError">
+    </iron-ajax>
+    <iron-ajax
+      id="updateSettingsAjax"
+      url="/api/update_settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleUpdateSettingsResponse"
+      on-error="handleError">
     </iron-ajax>
   </template>
 
@@ -87,6 +106,15 @@ Copyright (c) 2017 Ilari Pihlajisto
         }, ConfigImpl.properties);
       }
 
+      handleSettingsResponse(event) {
+        const resp = JSON.parse(event.detail.response);
+        if ('groups' in resp) {
+          this.set('groups', resp.groups);
+        } else {
+          this.set('groups', []);
+        }
+      }
+
       deleteCourt(event) {
         if (!confirm(this.localize('court_delete_confirm'))) {
           return;
@@ -104,11 +132,14 @@ Copyright (c) 2017 Ilari Pihlajisto
           return;
         }
 
-        const index = event.target.dataset.index;
-        this.splice('groups', index, 1);
+        this.groupToDelete = event.target.dataset.index;
+        this.$.deleteGroupAjax.body = {
+          index: event.target.dataset.index
+        };
+        this.$.deleteGroupAjax.generateRequest();
       }
 
-      handleDeleteCourtError(event) {
+      handleError(event) {
         this.error = event.detail.request.xhr.response.trim();
       }
 
@@ -119,6 +150,13 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.courtToDelete = null;
       }
 
+      handleDeleteGroupResponse(event) {
+        this.error = '';
+
+        this.splice('groups', this.groupToDelete, 1);
+        this.groupToDelete = null;
+      }
+
       addCourt() {
         this.set('rootRoute.path', '/court/new');
       }
@@ -126,8 +164,22 @@ Copyright (c) 2017 Ilari Pihlajisto
       addGroup() {
         const name = window.prompt(this.localize('enter_group_name'));
         if (name) {
-          this.push('groups', name);
+          var groups = this.groups || [];
+          this.groupToAdd = name;
+          this.$.updateSettingsAjax.body = {
+            groups: groups.concat(name)
+          };
+          this.$.updateSettingsAjax.generateRequest();
         }
+      }
+
+      handleUpdateSettingsResponse(event) {
+        if (this.groups) {
+          this.push('groups', this.groupToAdd);
+        } else {
+          this.set('groups', [this.groupToAdd]);
+        }
+        this.groupToAdd = null;
       }
     }
 

@@ -83,6 +83,7 @@ type Settings struct {
 	Id bson.ObjectId `json:"_id" bson:"_id"`
 	OpenRegistration bool `json:"open_registration" bson:"open_registration"`
 	UserDetails []CustomUserDetail `json:"user_details" bson:"user_details"`
+	Groups []string `json:"groups" bson:"groups"`
 }
 
 var mongo *mgo.Session
@@ -1020,6 +1021,10 @@ func updateSettingsHandler(w http.ResponseWriter, r *http.Request, m map[string]
 
 	if val, ok := m["user_details"]; ok {
 		obj["user_details"] = val
+	}
+
+	if val, ok := m["groups"]; ok {
+		obj["groups"] = val
 	}
 
 	if _, err := c.Upsert(nil, bson.M{"$set": obj}); err != nil {
