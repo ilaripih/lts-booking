@@ -11,6 +11,10 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-court">
@@ -70,6 +74,14 @@ Copyright (c) 2017 Ilari Pihlajisto
         </template>
 
         <paper-input id="name" type="text" label="[[localize('name')]]" value="{{formData.name}}" required auto-validate invalid="{{invalid.name}}"></paper-input>
+        <paper-dropdown-menu label="[[localize('group')]]">
+          <paper-listbox slot="dropdown-content" class="dropdown-content" selected="{{formData.group}}">
+            <paper-item></paper-item>
+            <template is="dom-repeat" items="[[groups]]">
+              <paper-item>[[item]]</paper-item>
+            </template>
+          </paper-listbox>
+        </paper-dropdown-menu>
         <paper-textarea always-float-label label="[[localize('booking_text')]]" value="{{formData.booking_text}}"></paper-textarea>
         <paper-input id="max_booking_length" type="text" maxlength="2" minlength="1" label="[[localize('max_booking_length')]]" value="{{formData.max_booking_length}}" required auto-validate invalid="{{invalid.max_booking_length}}"></paper-input>
         <paper-input id="max_bookings" type="text" maxlength="2" minlength="1" label="[[localize('max_bookings')]]" value="{{formData.max_bookings}}" required auto-validate invalid="{{invalid.max_bookings}}"></paper-input>
@@ -102,13 +114,23 @@ Copyright (c) 2017 Ilari Pihlajisto
     </div>
 
     <iron-ajax
+      id="settingsAjax"
+      auto
+      url="/api/settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSettingsResponse"
+      on-error="handleError">
+    </iron-ajax>
+    <iron-ajax
       id="saveAjax"
       url="/api/save_court"
       method="post"
       content-type="application/json"
       handle-as="text"
       on-response="handleSaveResponse"
-      on-error="handleSaveError">
+      on-error="handleError">
     </iron-ajax>
     <iron-ajax
       id="getAjax"
@@ -117,7 +139,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       content-type="application/json"
       handle-as="text"
       on-response="handleGetResponse"
-      on-error="handleGetError">
+      on-error="handleError">
     </iron-ajax>
   </template>
 
@@ -147,7 +169,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           courts: {
             type: Array,
             notify: true
-          }
+          },
+          groups: Array
         }, ConfigImpl.properties);
       }
 
@@ -171,6 +194,7 @@ Copyright (c) 2017 Ilari Pihlajisto
           this.$.getAjax.body = {
             _id: _id
           };
+          this.$.settingsAjax.generateRequest();
           this.$.getAjax.generateRequest();
         } else if (this.newCourt) {
           this.error = '';
@@ -185,13 +209,19 @@ Copyright (c) 2017 Ilari Pihlajisto
           'sunday_open', 'sunday_close'
         ];
 
+        var group = '';
+        if (this.formData.group > 0) {
+          group = this.groups[this.formData.group - 1];
+        }
+
         var data = {
           _id: this._id,
           name: this.formData.name,
           booking_text: this.formData.booking_text,
           max_booking_length: parseInt(this.formData.max_booking_length),
           max_bookings: parseInt(this.formData.max_bookings),
-          cancellation_period: parseInt(this.formData.cancellation_period)
+          cancellation_period: parseInt(this.formData.cancellation_period),
+          group: group
         };
         for (var key in this.formData) {
           if (_.includes(timeKeys, key)) {
@@ -221,8 +251,16 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.$.saveAjax.generateRequest();
       }
 
-      handleSaveError(event) {
+      handleError(event) {
         this.error = event.detail.request.xhr.response.trim();
+      }
+
+      handleSettingsResponse(event) {
+        const resp = JSON.parse(event.detail.response);
+        if ('groups' in resp) {
+          this.set('groups', resp.groups);
+          this.setGroup();
+        }
       }
 
       handleSaveResponse(event) {
@@ -248,10 +286,6 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.set('rootRoute.path', '/courts');
       }
 
-      handleGetError(event) {
-        this.error = event.detail.request.xhr.response.trim();
-      }
-
       handleGetResponse(event) {
         this.error = '';
         var resp = JSON.parse(event.detail.response);
@@ -267,6 +301,17 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.set('formData.saturday_close', this._intToTime(resp.saturday_close));
         this.set('formData.sunday_open', this._intToTime(resp.sunday_open));
         this.set('formData.sunday_close', this._intToTime(resp.sunday_close));
+        this.set('formData.groupText', resp.group);
+
+        this.setGroup();
+      }
+
+      setGroup() {
+        const text = this.formData.groupText;
+        if (text != undefined && this.groups) {
+          const index = this.groups.indexOf(text);
+          this.set('formData.group', index + 1);
+        }
       }
 
       cancel() {

@@ -108,6 +108,7 @@
 		"dependency": "Riippuvuus",
 		"dependency_field": "Riippuvuus (kenttä)",
 		"dependency_option": "Riippuvuus (valinta)",
+		"group": "Kategoria",
 		"groups": "Kategoriat",
 		"enter_group_name": "Kirjoita kategorian nimi",
 		"group_delete_confirm": "Haluatko varmasti poistaa kategorian?"

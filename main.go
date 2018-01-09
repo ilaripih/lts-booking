@@ -52,6 +52,7 @@ type Court struct {
 	SundayOpen int `json:"sunday_open" bson:"sunday_open"`
 	SundayClose int `json:"sunday_close" bson:"sunday_close"`
 	CreatedAt time.Time `bson:"created_at" json:"-"`
+	Group string `json:"group" bson:"group"`
 }
 
 type Booking struct {
@@ -469,6 +470,7 @@ func saveCourtHandler(w http.ResponseWriter, r *http.Request, m map[string]inter
 		"saturday_close": int(m["saturday_close"].(float64)),
 		"sunday_open": int(m["sunday_open"].(float64)),
 		"sunday_close": int(m["sunday_close"].(float64)),
+		"group": m["group"].(string),
 	}
 
 	if idStr == "new" {
