@@ -50,7 +50,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 
         <template is="dom-repeat" items="[[courts]]">
           <div>
-            <a href="/court/[[item._id]]">[[item.name]]</a>
+            <a href="/court/[[item._id]]">[[formatCourt(item)]]</a>
             <paper-icon-button data-index$="[[index]]" data-db-id$="[[item._id]]" icon="delete" on-tap="deleteCourt"></paper-icon-button>
           </div>
         </template>
@@ -113,6 +113,14 @@ Copyright (c) 2017 Ilari Pihlajisto
         } else {
           this.set('groups', []);
         }
+      }
+
+      formatCourt(court) {
+        var ret = court.name;
+        if (court.group) {
+          ret += ' (' + court.group + ')';
+        }
+        return ret;
       }
 
       deleteCourt(event) {

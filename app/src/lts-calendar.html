@@ -6,6 +6,10 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/vaadin-material-theme/vaadin-date-picker.html">
 <link rel="import" href="../bower_components/vaadin-date-picker/vaadin-date-picker.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-calendar">
@@ -58,13 +62,22 @@ Copyright (c) 2017 Ilari Pihlajisto
         <p class="alert-error">[[localize(error)]]</p>
       </template>
 
+      <paper-dropdown-menu label="[[localize('group')]]">
+        <paper-listbox slot="dropdown-content" class="dropdown-content" selected="{{group}}">
+          <template is="dom-repeat" items="[[groups]]">
+            <paper-item>[[item]]</paper-item>
+          </template>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      <br />
+
       <vaadin-date-picker id="date" i18n="[[_dateLocale(localize)]]" auto-validate label="[[localize('date')]]" value="{{date}}"></vaadin-date-picker>
 
       <table>
         <thead>
           <tr>
             <th>[[localize('time')]]</th>
-            <template is="dom-repeat" items="[[courts]]">
+            <template is="dom-repeat" items="[[filteredCourts]]">
               <th>[[item.name]]</th>
             </template>
           </tr>
@@ -128,7 +141,16 @@ Copyright (c) 2017 Ilari Pihlajisto
           bookings: Array,
           grid: {
             type: Array,
-            computed: 'computeGrid(date, courts.*, bookings)'
+            computed: 'computeGrid(date, filteredCourts.*, bookings)'
+          },
+          groups: {
+            type: Array,
+            computed: 'computeGroups(courts)'
+          },
+          group: Number,
+          filteredCourts: {
+            type: Array,
+            computed: 'computeFilteredCourts(courts, groups, group)'
           }
         }, ConfigImpl.properties);
       }
@@ -273,6 +295,28 @@ Copyright (c) 2017 Ilari Pihlajisto
         }
 
         return ret;
+      }
+
+      computeGroups(courts) {
+        var groups = _.uniq(courts.map(function(court) {
+          return court.group;
+        }));
+        groups.sort();
+        return groups;
+      }
+
+      computeFilteredCourts(courts, groups, group) {
+        if (group == undefined) {
+          return courts;
+        }
+
+        var groupStr = '';
+        if (groups && groups.length > 0) {
+          groupStr = groups[group];
+        }
+        return courts.filter(function(court) {
+          return court.group == groupStr;
+        });
       }
 
       onBookingsResponse(event) {
