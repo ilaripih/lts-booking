@@ -1113,7 +1113,7 @@ func main() {
 
 	certManager := autocert.Manager{
 		Prompt: autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist("ltsvaraus.com"),
+		HostPolicy: autocert.HostWhitelist(os.Getenv("LTS_BOOKING_DOMAIN")),
 		Cache: autocert.DirCache("certs"),
 	}
 
