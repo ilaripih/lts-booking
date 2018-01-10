@@ -1164,7 +1164,7 @@ func main() {
 				GetCertificate: certManager.GetCertificate,
 			},
 		}
-		log.Println("Listening at port 443")
+		log.Println("Listening at port 443, domain", os.Getenv("LTS_BOOKING_DOMAIN"))
 		err = server.ListenAndServeTLS("", "")
 	}
 	if err != nil {
