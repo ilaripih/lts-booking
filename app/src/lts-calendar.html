@@ -273,6 +273,22 @@ Copyright (c) 2017 Ilari Pihlajisto
               return bookingData;
             }
 
+            // Linked court booked?
+            if (court.targets) {
+              bookedObj = _.find(court.targets, function(targetId) {
+                const f = _.find(booked[targetId], function(obj) {
+                  return obj.range[0] < t + 30 && t < obj.range[1];
+                });
+                if (f) {
+                  return true;
+                }
+                return false;
+              });
+              if (bookedObj) {
+                return null;
+              }
+            }
+
             // Maximum booking length <= 0?
             if (court.max_booking_length <= 0) {
               return null;
