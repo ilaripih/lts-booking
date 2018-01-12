@@ -881,10 +881,9 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 		}
 	}
 
+	parentId := bson.NewObjectId()
 	for _, cId := range courtIds {
-		id := bson.NewObjectId()
 		booking := bson.M{
-			"_id": id,
 			"username": sess.Values["username"],
 			"title": title,
 			"court_id": cId,
@@ -893,9 +892,14 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 			"created_at": &now,
 			"weekday": dayOfWeek,
 		}
+		var id bson.ObjectId
 		if cId != courtId {
-			booking["parent"] = &courtId
+			id = bson.NewObjectId()
+			booking["parent"] = &parentId
+		} else {
+			id = parentId
 		}
+		booking["_id"] = id
 		if err := c.Insert(booking); err != nil {
 			return http.StatusInternalServerError, err
 		}
@@ -935,6 +939,9 @@ func cancelBookingHandler(w http.ResponseWriter, r *http.Request, m map[string]i
 
 	if err := c.Remove(fields); err != nil {
 		return http.StatusBadRequest, err
+	}
+	if _, err := c.RemoveAll(bson.M{"parent": id}); err != nil {
+		return http.StatusInternalServerError, err
 	}
 
 	return http.StatusOK, nil
