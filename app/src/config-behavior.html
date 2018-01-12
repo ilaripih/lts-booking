@@ -160,6 +160,9 @@
       return str;
     },
     _bookingTimes: function(booking, localize) {
+      if (!booking) {
+        return '';
+      }
       var begin = new Date(booking.begin);
       var end = new Date(booking.end);
       var str = '';

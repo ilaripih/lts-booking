@@ -62,7 +62,7 @@ Copyright (c) 2017 Ilari Pihlajisto
             </tr>
           </thead>
           <tbody>
-            <template is="dom-repeat" items="[[bookings]]" as="booking">
+            <template is="dom-repeat" items="[[bookings]]" as="booking" filter="isVisible">
               <tr>
                 <td>[[_bookingTimes(booking, localize)]]</td>
                 <td>[[_courtName(booking.court_id)]]</td>
@@ -190,6 +190,13 @@ Copyright (c) 2017 Ilari Pihlajisto
 
         this.splice('bookings', this.bookingToCancel, 1);
         this.bookingToCancel = null;
+      }
+
+      isVisible(booking) {
+        if (booking.parent) {
+          return false;
+        }
+        return true;
       }
     }
 

@@ -609,6 +609,7 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 		"end": 1,
 		"title": 1,
 		"weekday": 1,
+		"parent": 1,
 	}
 	if val, ok := m["court_id"]; ok {
 		idStr := val.(string)

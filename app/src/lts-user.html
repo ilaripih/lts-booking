@@ -82,7 +82,7 @@ Copyright (c) 2017 Ilari Pihlajisto
             </tr>
           </thead>
           <tbody>
-            <template is="dom-repeat" items="[[bookings]]" as="booking">
+            <template is="dom-repeat" items="[[bookings]]" as="booking" filter="isBookingVisible">
               <tr>
                 <td><a href="/edit-booking/[[booking._id]]">[[_bookingTimes(booking, localize)]]</a></td>
                 <td>[[_courtName(booking.court_id)]]</td>
@@ -188,6 +188,13 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       handleBookingsError(event) {
         this.error = event.detail.request.xhr.response.trim();
+      }
+
+      isBookingVisible(booking) {
+        if (booking.parent) {
+          return false;
+        }
+        return true;
       }
     }
 
