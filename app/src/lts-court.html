@@ -15,6 +15,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/isw-dropdown-menu/isw-dropdown-menu.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-court">
@@ -82,6 +83,11 @@ Copyright (c) 2017 Ilari Pihlajisto
             </template>
           </paper-listbox>
         </paper-dropdown-menu>
+        <isw-dropdown-menu multi attr-for-selected="value" selected-values="{{formData.targets}}" label="[[localize('targets')]]">
+          <template is="dom-repeat" items="[[courts]]">
+            <paper-item value$="[[item._id]]">[[item.name]]</paper-item>
+          </template>
+        </isw-dropdown-menu>
         <paper-textarea always-float-label label="[[localize('booking_text')]]" value="{{formData.booking_text}}"></paper-textarea>
         <paper-input id="max_booking_length" type="text" maxlength="2" minlength="1" label="[[localize('max_booking_length')]]" value="{{formData.max_booking_length}}" required auto-validate invalid="{{invalid.max_booking_length}}"></paper-input>
         <paper-input id="max_bookings" type="text" maxlength="2" minlength="1" label="[[localize('max_bookings')]]" value="{{formData.max_bookings}}" required auto-validate invalid="{{invalid.max_bookings}}"></paper-input>
@@ -221,7 +227,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           max_booking_length: parseInt(this.formData.max_booking_length),
           max_bookings: parseInt(this.formData.max_bookings),
           cancellation_period: parseInt(this.formData.cancellation_period),
-          group: group
+          group: group,
+          targets: this.formData.targets
         };
         for (var key in this.formData) {
           if (_.includes(timeKeys, key)) {
@@ -302,6 +309,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.set('formData.sunday_open', this._intToTime(resp.sunday_open));
         this.set('formData.sunday_close', this._intToTime(resp.sunday_close));
         this.set('formData.groupText', resp.group);
+        this.set('formData.targets', resp.targets || []);
 
         this.setGroup();
       }

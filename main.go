@@ -53,6 +53,7 @@ type Court struct {
 	SundayClose int `json:"sunday_close" bson:"sunday_close"`
 	CreatedAt time.Time `bson:"created_at" json:"-"`
 	Group string `json:"group" bson:"group"`
+	Targets []bson.ObjectId `json:"targets" bson:"targets"`
 }
 
 type Booking struct {
@@ -471,6 +472,19 @@ func saveCourtHandler(w http.ResponseWriter, r *http.Request, m map[string]inter
 		"sunday_open": int(m["sunday_open"].(float64)),
 		"sunday_close": int(m["sunday_close"].(float64)),
 		"group": m["group"].(string),
+	}
+
+	if val, ok := m["targets"]; ok {
+		targets := val.([]interface{})
+		newTargets := make([]bson.ObjectId, len(targets))
+		for i, target := range targets {
+			targetStr := target.(string)
+			if !bson.IsObjectIdHex(targetStr) {
+				return http.StatusNotFound, errors.New("not_found")
+			}
+			newTargets[i] = bson.ObjectIdHex(targetStr)
+		}
+		data["targets"] = newTargets
 	}
 
 	if idStr == "new" {
