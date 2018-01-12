@@ -67,6 +67,7 @@ type Booking struct {
 	PaidAt *time.Time `bson:"paid_at" json:"paid_at"`
 	PaymentType string `bson:"payment_type" json:"payment_type"`
 	WeekDay int `bson:"weekday" json:"weekday"`
+	Parent *bson.ObjectId `json:"parent" bson:"parent"`
 }
 
 type UserDetailDependency struct {
@@ -816,47 +817,12 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	defer s.Close()
 	c := s.DB("").C("courts")
 
-	// Checking that the court is free and inserting the booking needs to be
-	// one atomic operation.
-	bookHandlerMutex.Lock()
-	defer bookHandlerMutex.Unlock()
-
 	var court Court
-	if err := c.Find(bson.M{
-		"_id": courtId,
-		fieldOpen: bson.M{"$lte": beginNum},
-		fieldClose: bson.M{"$gte": endNum},
-	}).One(&court); err != nil {
-		return http.StatusBadRequest, errors.New("court_unavailable")
+	if err := c.Find(bson.M{"_id": courtId}).One(&court); err != nil {
+		return http.StatusNotFound, err
 	}
-
-	if !isAdmin && court.MaxBookingLength * 60 < (endNum - beginNum) {
-		return http.StatusBadRequest, errors.New("max_booking_length_exceeded")
-	}
-
-	c = s.DB("").C("bookings")
-	isBooked, err := isCourtBooked(courtId, begin, end, c)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	if isBooked {
-		return http.StatusBadRequest, errors.New("court_already_booked")
-	}
-
-	if !isAdmin {
-		// find number of future bookings to this court
-		count, err := c.Find(bson.M{
-			"username": sess.Values["username"],
-			"court_id": courtId,
-			"begin": bson.M{"$gt": now},
-		}).Count()
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
-		if count >= court.MaxBookings {
-			return http.StatusBadRequest, errors.New("max_bookings_exceeded")
-		}
-	}
+	courtIds := court.Targets
+	courtIds = append(courtIds, courtId)
 
 	dayOfWeek := -1
 	title := sess.Values["name"]
@@ -870,17 +836,68 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 		}
 	}
 
-	booking := bson.M{
-		"username": sess.Values["username"],
-		"title": title,
-		"court_id": courtId,
-		"begin": begin,
-		"end": end,
-		"created_at": &now,
-		"weekday": dayOfWeek,
+	// Checking that the court is free and inserting the booking needs to be
+	// one atomic operation.
+	bookHandlerMutex.Lock()
+	defer bookHandlerMutex.Unlock()
+
+	for _, cId := range courtIds {
+		c = s.DB("").C("courts")
+		if err := c.Find(bson.M{
+			"_id": cId,
+			fieldOpen: bson.M{"$lte": beginNum},
+			fieldClose: bson.M{"$gte": endNum},
+		}).One(&court); err != nil {
+			return http.StatusBadRequest, errors.New("court_unavailable")
+		}
+
+		if !isAdmin && court.MaxBookingLength * 60 < (endNum - beginNum) {
+			return http.StatusBadRequest, errors.New("max_booking_length_exceeded")
+		}
+
+		c = s.DB("").C("bookings")
+		isBooked, err := isCourtBooked(cId, begin, end, c)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+		if isBooked {
+			return http.StatusBadRequest, errors.New("court_already_booked")
+		}
+
+		if !isAdmin {
+			// find number of future bookings to this court
+			count, err := c.Find(bson.M{
+				"username": sess.Values["username"],
+				"court_id": cId,
+				"begin": bson.M{"$gt": now},
+			}).Count()
+			if err != nil {
+				return http.StatusInternalServerError, err
+			}
+			if count >= court.MaxBookings {
+				return http.StatusBadRequest, errors.New("max_bookings_exceeded")
+			}
+		}
 	}
-	if err := c.Insert(booking); err != nil {
-		return http.StatusInternalServerError, err
+
+	for _, cId := range courtIds {
+		id := bson.NewObjectId()
+		booking := bson.M{
+			"_id": id,
+			"username": sess.Values["username"],
+			"title": title,
+			"court_id": cId,
+			"begin": begin,
+			"end": end,
+			"created_at": &now,
+			"weekday": dayOfWeek,
+		}
+		if cId != courtId {
+			booking["parent"] = &courtId
+		}
+		if err := c.Insert(booking); err != nil {
+			return http.StatusInternalServerError, err
+		}
 	}
 
 	return http.StatusOK, nil
