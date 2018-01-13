@@ -1194,10 +1194,10 @@ func main() {
 		log.Println("Listening at localhost:" + port)
 		err = http.ListenAndServe(":" + port, context.ClearHandler(http.DefaultServeMux))
 	} else {
-		go http.ListenAndServe(":80", http.HandlerFunc(redirect))
+		go http.ListenAndServe(":http", certManager.HTTPHandler(http.HandlerFunc(redirect)))
 
 		server := &http.Server{
-			Addr: ":443",
+			Addr: ":https",
 			Handler: context.ClearHandler(http.DefaultServeMux),
 			TLSConfig: &tls.Config{
 				GetCertificate: certManager.GetCertificate,
