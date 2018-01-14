@@ -1,0 +1,111 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="./config-behavior.html">
+
+<dom-module id="lts-help">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      .wrapper-btns {
+        margin-top: 15px;
+      }
+
+      paper-button.link {
+        color: #757575;
+      }
+    </style>
+
+    <div class="card">
+      <div>
+        <h1>[[localize('help')]]</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+        <template is="dom-if" if="[[success]]">
+          <p class="alert-success">[[localize(success)]]</p>
+        </template>
+
+        <template is="dom-if" if="[[isadmin]]">
+          <paper-textarea always-float-label label="[[localize('help_text')]]" value="{{helpText}}"></paper-textarea>
+          <div class="wrapper-btns">
+            <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+          </div>
+        </template>
+        <template is="dom-if" if ="[[!isadmin]]">
+          <pre>[[helpText]]</pre>
+        </template>
+      </div>
+    </div>
+    <iron-ajax
+      id="settingsAjax"
+      auto
+      url="/api/settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleSettingsResponse"
+      on-error="handleError">
+    </iron-ajax>
+    <iron-ajax
+      id="updateSettingsAjax"
+      url="/api/update_settings"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleUpdateSettingsResponse"
+      on-error="handleError">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsHelp extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-help'; }
+
+      static get properties() {
+        return _.defaults({
+          helpText: String,
+          error: String,
+          success: String
+        }, ConfigImpl.properties);
+      }
+
+      postSave() {
+        this.$.updateSettingsAjax.body = {
+          help_text: this.helpText
+        };
+        this.$.updateSettingsAjax.generateRequest();
+      }
+
+      handleSettingsResponse(event) {
+        const ret = JSON.parse(event.detail.response);
+        const helpText = ret.help_text || '';
+        this.set('helpText', helpText);
+      }
+
+      handleUpdateSettingsResponse(event) {
+        this.error = '';
+        this.success = 'help_text_updated';
+      }
+
+      handleError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+    }
+
+    window.customElements.define(LtsHelp.is, LtsHelp);
+  </script>
+</dom-module>

@@ -84,6 +84,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <a name="users" hidden="[[!isAdmin]]" href="/users">[[localize('users')]]</a>
           <a name="settings" hidden="[[!user]]" href="/settings">[[localize('my_settings')]]</a>
           <a name="my-bookings" hidden="[[!user]]" href="/my-bookings">[[localize('my_bookings')]]</a>
+          <a name="help" href="/help">[[localize('help')]]</a>
           <a name="login" hidden="[[user]]" href="/login">[[localize('login')]]</a>
           <a name="logout" hidden="[[!user]]" href="/logout">[[localize('logout')]]</a>
         </iron-selector>
@@ -117,6 +118,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <lts-change-password name="change-password"></lts-change-password>
           <lts-create-user name="create-user"></lts-create-user>
           <lts-required-user-details name="required-user-details"></lts-required-user-details>
+          <lts-help name="help" isadmin="{{isAdmin}}"></lts-help>
           <lts-view404 name="view404"></lts-view404>
         </iron-pages>
       </app-header-layout>
@@ -203,7 +205,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return;
         }
 
-        if (!user && !_.includes(['login', 'logout', 'calendar'], page)) {
+        if (!user && !_.includes(['login', 'logout', 'calendar', 'help'], page)) {
           this.page = 'login';
         } else {
           // If no page was found in the route data, page will be an empty string.
