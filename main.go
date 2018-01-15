@@ -1132,15 +1132,6 @@ func addIndexes(s *mgo.Session) error {
 	return nil
 }
 
-func redirect(w http.ResponseWriter, req *http.Request) {
-    // remove/add not default ports from req.Host
-    target := "https://" + req.Host + req.URL.Path
-    if len(req.URL.RawQuery) > 0 {
-        target += "?" + req.URL.RawQuery
-    }
-    http.Redirect(w, req, target, http.StatusTemporaryRedirect)
-}
-
 func main() {
 	var err error
 	mongo, err = mgo.Dial("localhost/lts-booking")
@@ -1199,7 +1190,7 @@ func main() {
 		log.Println("Listening at localhost:" + port)
 		err = http.ListenAndServe(":" + port, context.ClearHandler(http.DefaultServeMux))
 	} else {
-		go http.ListenAndServe(":http", certManager.HTTPHandler(http.HandlerFunc(redirect)))
+		go http.ListenAndServe(":http", certManager.HTTPHandler(nil))
 
 		server := &http.Server{
 			Addr: ":https",
