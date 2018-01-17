@@ -84,7 +84,7 @@ Copyright (c) 2017 Ilari Pihlajisto
           </paper-listbox>
         </paper-dropdown-menu>
         <isw-dropdown-menu multi attr-for-selected="value" selected-values="{{formData.targets}}" label="[[localize('targets')]]">
-          <template is="dom-repeat" items="[[courts]]">
+          <template is="dom-repeat" items="[[courts]]" filter="isNotThisCourt">
             <paper-item value$="[[item._id]]">[[item.name]]</paper-item>
           </template>
         </isw-dropdown-menu>
@@ -246,6 +246,10 @@ Copyright (c) 2017 Ilari Pihlajisto
           }
         }
         return true;
+      }
+
+      isNotThisCourt(court) {
+        return court._id != this._id;
       }
 
       postSave() {
