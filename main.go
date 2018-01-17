@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"log"
@@ -158,14 +159,16 @@ func myHandler(fn func(http.ResponseWriter, *http.Request, map[string]interface{
 			}
 		}
 
-		decoder := json.NewDecoder(r.Body)
 		defer r.Body.Close()
 
 		var m map[string]interface{}
-		if err := decoder.Decode(&m); err != nil {
-			log.Println(r.URL, r.RemoteAddr, "JSON decoding error:", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+		if r.Header.Get("Content-Type") == "application/json" {
+			decoder := json.NewDecoder(r.Body)
+			if err := decoder.Decode(&m); err != nil {
+				log.Println(r.URL, r.RemoteAddr, "JSON decoding error:", err)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 		}
 		if m == nil {
 			m = make(map[string]interface{})
@@ -1019,6 +1022,55 @@ func usersHandler(w http.ResponseWriter, r *http.Request, m map[string]interface
 	return http.StatusOK, nil
 }
 
+func usersCsvHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+
+	var users []User
+	if err := c.Find(nil).All(&users); err != nil {
+		return http.StatusNotFound, err
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	csvWriter := csv.NewWriter(w)
+	csvWriter.Comma = ';'
+
+	record := []string{
+		"Käyttäjänimi",
+		"Nimi",
+		"Sähköposti",
+		"Katuosoite",
+		"Postinumero",
+		"Puhelinnumero",
+		"Luontipäivämäärä",
+	}
+	if err := csvWriter.Write(record); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	for _, user := range users {
+		if user.Disabled {
+			continue
+		}
+		record := []string{
+			user.Username,
+			user.Name,
+			user.Email,
+			user.StreetAddress,
+			user.PostalCode,
+			user.PhoneNumber,
+			user.CreatedAt.In(loc).Format("02.01.2006 15:04:05"),
+		}
+		if err := csvWriter.Write(record); err != nil {
+			return http.StatusInternalServerError, err
+		}
+	}
+	csvWriter.Flush()
+
+	return http.StatusOK, nil
+}
+
 func userDetailsHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	s := mongo.Copy()
 	defer s.Close()
@@ -1192,6 +1244,7 @@ func main() {
 	http.HandleFunc("/api/settings", myHandler(settingsHandler, ""))
 	http.HandleFunc("/api/update_settings", myHandler(updateSettingsHandler, "admin"))
 	http.HandleFunc("/api/update_user_disabled", myHandler(updateUserDisabledHandler, "admin", "username", "disabled"))
+	http.HandleFunc("/api/users_csv", myHandler(usersCsvHandler, "admin"))
 
 	port := os.Getenv("LTS_BOOKING_PORT")
 	if port != "" {
