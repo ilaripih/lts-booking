@@ -93,7 +93,7 @@ type Settings struct {
 var mongo *mgo.Session
 var appDir = "./app"
 var store = sessions.NewCookieStore([]byte("lts-cookie-store"))
-var loc, _ = time.LoadLocation("Europe/Helsinki")
+var loc *time.Location
 
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -763,8 +763,10 @@ func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (b
 	tBegin := begin.Hour() * 60 + begin.Minute()
 	tEnd := end.Hour() * 60 + end.Minute()
 	for _, b := range bookings {
-		bBegin := b.Begin.Hour() * 60 + b.Begin.Minute()
-		bEnd := b.End.Hour() * 60 + b.End.Minute()
+		bBeginLoc := b.Begin.In(loc)
+		bEndLoc := b.End.In(loc)
+		bBegin := bBeginLoc.Hour() * 60 + bBeginLoc.Minute()
+		bEnd := bEndLoc.Hour() * 60 + bEndLoc.Minute()
 		if tBegin < bEnd && tEnd > bBegin {
 			return true, nil
 		}
@@ -1134,6 +1136,12 @@ func addIndexes(s *mgo.Session) error {
 
 func main() {
 	var err error
+
+	loc, err = time.LoadLocation("Europe/Helsinki")
+	if err != nil {
+		log.Panic("Unable to set IANA location:", err)
+	}
+
 	mongo, err = mgo.Dial("localhost/lts-booking")
 	if err != nil {
 		log.Panic("Unable to establish MongoDB connection:", err)
