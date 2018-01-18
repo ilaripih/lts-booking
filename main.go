@@ -1032,6 +1032,7 @@ func usersCsvHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 		return http.StatusNotFound, err
 	}
 
+	w.Header().Set("Content-Disposition", "attachment; filename=users.csv")
 	w.Header().Set("Content-Type", "text/csv")
 	csvWriter := csv.NewWriter(w)
 	csvWriter.Comma = ';'

@@ -115,6 +115,7 @@
 		"targets": "Linkitetyt kohteet",
 		"help": "Apua",
 		"help_text": "Ohjeistus-teksti",
-		"help_text_updated": "Ohjeistus-teksti päivitettiin onnistuneesti"
+		"help_text_updated": "Ohjeistus-teksti päivitettiin onnistuneesti",
+		"csv_export": "Vie käyttäjälista CSV-tiedostoon"
 	}
 }
