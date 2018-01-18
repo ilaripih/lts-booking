@@ -1027,6 +1027,11 @@ func usersCsvHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	defer s.Close()
 	c := s.DB("").C("users")
 
+	settings, err := getSettings()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
 	var users []User
 	if err := c.Find(nil).All(&users); err != nil {
 		return http.StatusNotFound, err
@@ -1046,6 +1051,9 @@ func usersCsvHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 		"Puhelinnumero",
 		"Luontipäivämäärä",
 	}
+	for _, f1 := range settings.UserDetails {
+		record = append(record, f1.Name)
+	}
 	if err := csvWriter.Write(record); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -1062,6 +1070,14 @@ func usersCsvHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 			user.PostalCode,
 			user.PhoneNumber,
 			user.CreatedAt.In(loc).Format("02.01.2006 15:04:05"),
+		}
+		for _, f1 := range settings.UserDetails {
+			for _, f2 := range user.Custom {
+				if f2.Name == f1.Name {
+					record = append(record, f2.Value)
+					break
+				}
+			}
 		}
 		if err := csvWriter.Write(record); err != nil {
 			return http.StatusInternalServerError, err
