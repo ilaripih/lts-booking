@@ -55,6 +55,7 @@ type Court struct {
 	CreatedAt time.Time `bson:"created_at" json:"-"`
 	Group string `json:"group" bson:"group"`
 	Targets []bson.ObjectId `json:"targets" bson:"targets"`
+	HourPrecision bool `json:"hour_precision" bson:"hour_precision"`
 }
 
 type Booking struct {
@@ -477,6 +478,7 @@ func saveCourtHandler(w http.ResponseWriter, r *http.Request, m map[string]inter
 		"sunday_open": int(m["sunday_open"].(float64)),
 		"sunday_close": int(m["sunday_close"].(float64)),
 		"group": m["group"].(string),
+		"hour_precision": m["hour_precision"].(bool),
 	}
 
 	if val, ok := m["targets"]; ok {

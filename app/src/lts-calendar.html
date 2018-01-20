@@ -42,7 +42,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         border-bottom: 1px solid grey;
       }
 
-      td:not(:first-child):not([data-court-id]) {
+      td:not(:first-child):not([data-bookable]) {
         background-color: #d8d8d8;
       }
 
@@ -89,7 +89,7 @@ Copyright (c) 2017 Ilari Pihlajisto
                 <label>[[_intToTime(timeslot.time)]]</label>
               </td>
               <template is="dom-repeat" items="[[timeslot.available]]" as="bookingCell">
-                <td data-court-id$="[[bookingCell.court_id]]">
+                <td data-bookable$="[[bookingCell.bookable]]" data-court-id$="[[bookingCell.court_id]]">
                   <template is="dom-if" if="[[bookingCell.court_id]]">
                     <a href="/book/[[bookingCell.court_id]]/[[date]]/[[timeslot.time]]">[[localize('book')]]</a>
                   </template>
@@ -299,8 +299,16 @@ Copyright (c) 2017 Ilari Pihlajisto
               return null;
             }
 
+            // Hour precision
+            if (court.hour_precision && (t % 60) != 0) {
+              return {
+                bookable: true
+              }
+            }
+
             return {
-              court_id: court._id
+              court_id: court._id,
+              bookable: true
             };
           });
 

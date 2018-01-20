@@ -11,6 +11,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../bower_components/neon-animation/web-animations.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
@@ -88,6 +89,9 @@ Copyright (c) 2017 Ilari Pihlajisto
             <paper-item value$="[[item._id]]">[[item.name]]</paper-item>
           </template>
         </isw-dropdown-menu>
+        <paper-toggle-button checked="{{formData.hour_precision}}">
+          [[localize('hour_precision')]]
+        </paper-toggle-button>
         <paper-textarea always-float-label label="[[localize('booking_text')]]" value="{{formData.booking_text}}"></paper-textarea>
         <paper-input id="max_booking_length" type="text" maxlength="2" minlength="1" label="[[localize('max_booking_length')]]" value="{{formData.max_booking_length}}" required auto-validate invalid="{{invalid.max_booking_length}}"></paper-input>
         <paper-input id="max_bookings" type="text" maxlength="2" minlength="1" label="[[localize('max_bookings')]]" value="{{formData.max_bookings}}" required auto-validate invalid="{{invalid.max_bookings}}"></paper-input>
@@ -228,7 +232,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           max_bookings: parseInt(this.formData.max_bookings),
           cancellation_period: parseInt(this.formData.cancellation_period),
           group: group,
-          targets: this.formData.targets
+          targets: this.formData.targets,
+          hour_precision: this.formData.hour_precision
         };
         for (var key in this.formData) {
           if (_.includes(timeKeys, key)) {
@@ -314,6 +319,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.set('formData.sunday_close', this._intToTime(resp.sunday_close));
         this.set('formData.groupText', resp.group);
         this.set('formData.targets', resp.targets || []);
+        this.set('formData.hour_precision', resp.hour_precision);
 
         this.setGroup();
       }

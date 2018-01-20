@@ -237,8 +237,9 @@ Copyright (c) 2017 Ilari Pihlajisto
           });
         }
 
+        const tStep = this.court.hour_precision ? 60 : 30;
         var opts = [];
-        for (var t = begin + 30; t <= end; t += 30) {
+        for (var t = begin + tStep; t <= end; t += tStep) {
           // Court booked?
           if (_.find(booked, function(bBegin) {
             return bBegin < t && bBegin >= begin;
@@ -257,7 +258,7 @@ Copyright (c) 2017 Ilari Pihlajisto
           });
         }
         this.durationOptions = opts;
-        if (opts.length > 1) {
+        if (opts.length > 1 && tStep == 30) {
           this.durationIndex = 1;
         }
       }
