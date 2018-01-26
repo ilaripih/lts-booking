@@ -82,6 +82,7 @@ type CustomUserDetail struct {
 	Type int `json:"type" bson:"type"`
 	Options []string `json:"options" bson:"options"`
 	Dependency *UserDetailDependency `json:"dependency" bson:"dependency"`
+	Unique bool `json:"unique" bson:"unique"`
 }
 
 type Settings struct {
@@ -344,6 +345,43 @@ func sessionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func checkUniqueField(username, key, value string) error {
+	settings, err := getSettings()
+	if err != nil || len(settings.UserDetails) == 0 {
+		return nil
+	}
+	isUnique := false
+	for _, field := range settings.UserDetails {
+		if field.Name == key {
+			isUnique = field.Unique
+			break
+		}
+	}
+	if !isUnique {
+		return nil
+	}
+
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+	var user User
+	if err := c.Find(bson.M{
+		"username": bson.M{"$ne": username},
+		"custom": bson.M{
+			"$elemMatch": bson.M{
+				"name": key,
+				"value": value,
+			},
+		},
+	}).One(&user); err != nil {
+		if err.Error() == "not found" {
+			return nil
+		}
+		return err
+	}
+	return errors.New("value_not_unique")
+}
+
 func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	name := m["name"].(string)
 	email := m["email"].(string)
@@ -366,6 +404,15 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 		"phone_number": phoneNumber,
 	}
 	if val, ok := m["custom"]; ok {
+		customArr := m["custom"].([]interface{})
+		for _, v := range customArr {
+			obj := v.(map[string]interface{})
+			objName := obj["name"].(string)
+			objVal := obj["value"].(string)
+			if err := checkUniqueField(sess.Values["username"].(string), objName, objVal); err != nil {
+				return http.StatusBadRequest, err
+			}
+		}
 		updateObj["custom"] = val
 	}
 
@@ -1144,6 +1191,10 @@ func updateSettingsHandler(w http.ResponseWriter, r *http.Request, m map[string]
 
 	if val, ok := m["help_text"]; ok {
 		obj["help_text"] = val
+	}
+
+	if val, ok := m["unique"]; ok {
+		obj["unique"] = val
 	}
 
 	if _, err := c.Upsert(nil, bson.M{"$set": obj}); err != nil {

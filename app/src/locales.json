@@ -117,6 +117,11 @@
 		"help_text": "Ohjeistus-teksti",
 		"help_text_updated": "Ohjeistus-teksti päivitettiin onnistuneesti",
 		"csv_export": "Vie käyttäjälista CSV-tiedostoon",
-		"hour_precision": "Varaukset vain tasatunnein"
+		"hour_precision": "Varaukset vain tasatunnein",
+		"unique_value": "Uniikki arvo",
+		"unique": "Uniikki",
+		"true": "kyllä",
+		"false": "ei",
+		"value_not_unique": "Arvo ei ole uniikki"
 	}
 }
