@@ -45,7 +45,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <div id="inputs">
           <paper-input id="username" type="text" label="[[localize('username')]]" value="{{formData.username}}" required auto-validate invalid="{{invalid.username}}"></paper-input>
-          <paper-input id="password" type="password" label="[[localize('password')]]" value="{{formData.password}}" required auto-validate minlength="8" invalid="{{invalid.password}}"></paper-input>
+          <paper-input id="password" type="password" label="[[localize('password')]]" value="{{formData.password}}" required auto-validate invalid="{{invalid.password}}"></paper-input>
         </div>
         <div class="wrapper-btns">
           <paper-button raised class="primary" on-tap="postLogin">[[localize('login')]]</paper-button>

@@ -12,7 +12,7 @@
 		"sign_up": "Rekisteröidy",
 		"invalid_email": "Virheellinen sähköpostiosoite",
 		"missing_parameter": "Pakollinen kenttä jäi täyttämättä",
-		"short_password": "Salasanan täytyy olla vähintään 8 merkkiä pitkä",
+		"short_password": "Salasanan täytyy olla vähintään 6 merkkiä pitkä",
 		"user_already_exists": "Käyttäjätunnus on jo rekisteröity",
 		"database_error": "Virhe tietokantayhteydessä",
 		"invalid_credentials": "Käyttäjätunnus ja salasana eivät täsmää",
@@ -122,6 +122,7 @@
 		"unique": "Uniikki",
 		"true": "kyllä",
 		"false": "ei",
-		"value_not_unique": "Arvo ei ole uniikki"
+		"value_not_unique": "Arvo ei ole uniikki",
+		"invalid_username": "Käyttäjätunnuksen pitää olla vähintään 4 merkkiä pitkä"
 	}
 }

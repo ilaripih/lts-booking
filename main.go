@@ -238,7 +238,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request, m map[string]interfac
 	if len(username) < 4 {
 		return http.StatusBadRequest, errors.New("invalid_username")
 	}
-	if len(password) < 8 {
+	if len(password) < 6 {
 		return http.StatusBadRequest, errors.New("short_password")
 	}
 
