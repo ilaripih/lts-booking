@@ -176,16 +176,24 @@ func myHandler(fn func(http.ResponseWriter, *http.Request, map[string]interface{
 			m = make(map[string]interface{})
 		}
 
+		if err := r.ParseForm(); err != nil {
+			log.Println(r.URL, r.RemoteAddr, "Could not parse form:", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		for _, param := range required {
 			if _, ok := m[param]; !ok {
 				formVal := r.FormValue(param)
-				if formVal != "" {
-					m[param] = formVal
-				} else {
+				if formVal == "" {
 					log.Println(r.URL, r.RemoteAddr, "missing_parameter:", param)
 					http.Error(w, "missing_parameter", http.StatusBadRequest)
 					return
 				}
+			}
+		}
+		for key, values := range r.Form {
+			if len(values) > 0 {
+				m[key] = values[0]
 			}
 		}
 
@@ -428,7 +436,6 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 }
 
 func updateUserPasswordHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
-	currentPassword := m["current_password"].(string)
 	newPassword := m["new_password"].(string)
 
 	if len(newPassword) < 8 {
@@ -439,12 +446,25 @@ func updateUserPasswordHandler(w http.ResponseWriter, r *http.Request, m map[str
 	defer s.Close()
 	c := s.DB("").C("users")
 
-	var user bson.M
-	if err := c.Find(bson.M{"username": sess.Values["username"]}).One(&user); err != nil {
-		return http.StatusInternalServerError, err
+	checkCurrentPassword := true
+	isAdmin := (sess.Values["level"] == "admin")
+	username := sess.Values["username"]
+	if isAdmin {
+		if val, ok := m["username"]; ok {
+			username = val.(string)
+			checkCurrentPassword = false
+		}
 	}
-	if !checkPasswordHash(currentPassword, user["password"].(string)) {
-		return http.StatusUnauthorized, errors.New("invalid_current_password")
+
+	if checkCurrentPassword {
+		currentPassword := m["current_password"].(string)
+		var user bson.M
+		if err := c.Find(bson.M{"username": username}).One(&user); err != nil {
+			return http.StatusInternalServerError, err
+		}
+		if !checkPasswordHash(currentPassword, user["password"].(string)) {
+			return http.StatusUnauthorized, errors.New("invalid_current_password")
+		}
 	}
 
 	hashedPassword, err := hashPassword(newPassword)
@@ -452,7 +472,7 @@ func updateUserPasswordHandler(w http.ResponseWriter, r *http.Request, m map[str
 		return http.StatusInternalServerError, err
 	}
 
-	if err := c.Update(bson.M{"username": sess.Values["username"]}, bson.M{
+	if err := c.Update(bson.M{"username": username}, bson.M{
 		"$set": bson.M{"password": hashedPassword},
 	}); err != nil {
 		return http.StatusInternalServerError, err
@@ -1306,8 +1326,7 @@ func main() {
 	http.HandleFunc("/api/cancel_booking", myHandler(cancelBookingHandler, "user", "_id"))
 	http.HandleFunc("/api/set_booking_payment", myHandler(setBookingPaymentHandler, "admin",
 		"_id", "payment_type"))
-	http.HandleFunc("/api/update_user_password", myHandler(updateUserPasswordHandler, "user",
-		"current_password", "new_password"))
+	http.HandleFunc("/api/update_user_password", myHandler(updateUserPasswordHandler, "user", "new_password"))
 	http.HandleFunc("/api/user", myHandler(userHandler, "admin", "username"))
 	http.HandleFunc("/api/users", myHandler(usersHandler, "admin"))
 	http.HandleFunc("/api/user_details", myHandler(userDetailsHandler, "user"))
