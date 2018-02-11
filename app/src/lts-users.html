@@ -7,6 +7,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid-sorter.html">
 <link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
@@ -50,19 +51,27 @@ Copyright (c) 2017 Ilari Pihlajisto
 
         <vaadin-grid aria-label="[[localize('users')]]" items="[[users]]">
           <vaadin-grid-column>
-            <template class="header">[[localize('username')]]</template>
+            <template class="header">
+              <vaadin-grid-sorter path="username">[[localize('username')]]</vaadin-grid-sorter>
+            </template>
             <template><a href="/user/[[item.username]]">[[item.username]]</a></template>
           </vaadin-grid-column>
           <vaadin-grid-column>
-            <template class="header">[[localize('name')]]</template>
+            <template class="header">
+              <vaadin-grid-sorter path="name">[[localize('name')]]</vaadin-grid-sorter>
+            </template>
             <template>[[item.name]]</template>
           </vaadin-grid-column>
           <vaadin-grid-column width="150px" flex-grow="0">
-            <template class="header">[[localize('created_at')]]</template>
+            <template class="header">
+              <vaadin-grid-sorter path="created_at">[[localize('created_at')]]</vaadin-grid-sorter>
+            </template>
             <template>[[_parseMongoTime(item.created_at)]]</template>
           </vaadin-grid-column>
           <vaadin-grid-column>
-            <template class="header">[[localize('enabled')]]</template>
+            <template class="header">
+              <vaadin-grid-sorter path="disabled">[[localize('enabled')]]</vaadin-grid-sorter>
+            </template>
             <template>
               <paper-toggle-button data-username$="[[item.username]]" on-change="toggleUserDisabled" checked="{{!item.disabled}}"></paper-toggle-button>
             </template>
