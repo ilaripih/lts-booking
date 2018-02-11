@@ -40,6 +40,9 @@ Copyright (c) 2017 Ilari Pihlajisto
         <paper-toggle-button on-change="toggleOpenRegistration" checked="{{settings.open_registration}}">
           [[localize('open_registration_toggle')]]
         </paper-toggle-button>
+        <paper-toggle-button checked="{{disabledUsersVisible}}">
+          [[localize('disabled_users_visible_toggle')]]
+        </paper-toggle-button>
         <br />
 
         <div>
@@ -49,7 +52,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         </div>
         <br />
 
-        <vaadin-grid aria-label="[[localize('users')]]" items="[[users]]">
+        <vaadin-grid aria-label="[[localize('users')]]" items="[[visibleUsers]]">
           <vaadin-grid-column>
             <template class="header">
               <vaadin-grid-sorter path="username">[[localize('username')]]</vaadin-grid-sorter>
@@ -129,6 +132,14 @@ Copyright (c) 2017 Ilari Pihlajisto
         return _.defaults({
           error: String,
           users: Array,
+          visibleUsers: {
+            type: Array,
+            computed: 'computeVisibleUsers(disabledUsersVisible, users)'
+          },
+          disabledUsersVisible: {
+            type: Boolean,
+            value: true
+          },
           settings: {
             type: Object,
             value: {
@@ -148,6 +159,15 @@ Copyright (c) 2017 Ilari Pihlajisto
         if (rootRoute.path == '/users') {
           this.$.usersAjax.generateRequest();
         }
+      }
+
+      computeVisibleUsers(disabledUsersVisible, users) {
+        if (disabledUsersVisible) {
+          return users;
+        }
+        return users.filter(function(user) {
+          return !user.disabled;
+        });
       }
 
       toggleOpenRegistration(event) {

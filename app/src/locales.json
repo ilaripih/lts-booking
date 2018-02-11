@@ -123,6 +123,7 @@
 		"true": "kyllä",
 		"false": "ei",
 		"value_not_unique": "Arvo ei ole uniikki",
-		"invalid_username": "Käyttäjätunnuksen pitää olla vähintään 4 merkkiä pitkä"
+		"invalid_username": "Käyttäjätunnuksen pitää olla vähintään 4 merkkiä pitkä",
+		"disabled_users_visible_toggle": "Näytä myös käytöstä poistetut käyttäjät"
 	}
 }
