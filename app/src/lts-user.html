@@ -6,6 +6,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-user">
@@ -32,6 +33,9 @@ Copyright (c) 2017 Ilari Pihlajisto
       <div id="authenticated">
         <template is="dom-if" if="[[error]]">
           <p class="alert-error">[[localize(error)]]</p>
+        </template>
+        <template is="dom-if" if="[[success]]">
+          <p class="alert-success">[[localize(success)]]</p>
         </template>
 
         <h1>[[localize('user_details')]]</h1>
@@ -70,6 +74,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           </tbody>
         </table>
 
+        <paper-button raised class="primary" on-tap="resetPassword">[[localize('reset_password')]]</paper-button>
+
         <h1>[[localize('bookings')]]</h1>
         <table>
           <thead>
@@ -102,7 +108,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       content-type="application/json"
       handle-as="text"
       on-response="handleUserResponse"
-      on-error="handleUserError">
+      on-error="handleError">
     </iron-ajax>
     <iron-ajax
       id="userBookingsAjax"
@@ -111,7 +117,16 @@ Copyright (c) 2017 Ilari Pihlajisto
       content-type="application/json"
       handle-as="text"
       on-response="handleBookingsResponse"
-      on-error="handleBookingsError">
+      on-error="handleError">
+    </iron-ajax>
+    <iron-ajax
+      id="updateUserPasswordAjax"
+      url="/api/update_user_password"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleUpdateUserPasswordResponse"
+      on-error="handleError">
     </iron-ajax>
   </template>
 
@@ -122,6 +137,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       static get properties() {
         return _.defaults({
           error: String,
+          success: String,
           user: {
             type: Object,
             value: {}
@@ -149,6 +165,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           return;
         }
         this.error = '';
+        this.success = '';
+        this.newPassword = null;
 
         this.$.userAjax.body = {
           username: username
@@ -178,7 +196,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.user = JSON.parse(event.detail.response);
       }
 
-      handleUserError(event) {
+      handleError(event) {
         this.error = event.detail.request.xhr.response.trim();
       }
 
@@ -186,15 +204,28 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.bookings = JSON.parse(event.detail.response);
       }
 
-      handleBookingsError(event) {
-        this.error = event.detail.request.xhr.response.trim();
-      }
-
       isBookingVisible(booking) {
         if (booking.parent) {
           return false;
         }
         return true;
+      }
+
+      resetPassword() {
+        if (!confirm(this.localize('confirm_reset_user_password'))) {
+          return;
+        }
+        this.newPassword = Math.random().toString(36).slice(-8);
+        this.$.updateUserPasswordAjax.body = {
+          username: this.user.username,
+          new_password: this.newPassword
+        };
+        this.$.updateUserPasswordAjax.generateRequest();
+      }
+
+      handleUpdateUserPasswordResponse(event) {
+        this.error = '';
+        this.success = this.localize('new_password') + ': ' + this.newPassword;
       }
     }
 
