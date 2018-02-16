@@ -1091,6 +1091,18 @@ func usersHandler(w http.ResponseWriter, r *http.Request, m map[string]interface
 	return http.StatusOK, nil
 }
 
+func deleteUserHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
+
+	if err := c.Remove(bson.M{"username": m["username"].(string)}); err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	return http.StatusOK, nil
+}
+
 func usersCsvHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	s := mongo.Copy()
 	defer s.Close()
@@ -1334,6 +1346,7 @@ func main() {
 	http.HandleFunc("/api/update_settings", myHandler(updateSettingsHandler, "admin"))
 	http.HandleFunc("/api/update_user_disabled", myHandler(updateUserDisabledHandler, "admin", "username", "disabled"))
 	http.HandleFunc("/api/users_csv", myHandler(usersCsvHandler, "admin"))
+	http.HandleFunc("/api/delete_user", myHandler(deleteUserHandler, "admin", "username"))
 
 	port := os.Getenv("LTS_BOOKING_PORT")
 	if port != "" {

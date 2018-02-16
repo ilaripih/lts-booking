@@ -126,6 +126,9 @@
 		"invalid_username": "Käyttäjätunnuksen pitää olla vähintään 4 merkkiä pitkä",
 		"disabled_users_visible_toggle": "Näytä myös käytöstä poistetut käyttäjät",
 		"reset_password": "Resetoi salasana",
-		"confirm_reset_user_password": "Haluatko varmasti resetoida käyttäjän salasanan?"
+		"confirm_reset_user_password": "Haluatko varmasti resetoida käyttäjän salasanan?",
+		"delete_user": "Poista käyttäjä",
+		"confirm_delete_user": "Haluatko varmasti poistaa käyttäjän?",
+		"delete_user_success": "Käyttäjä poistettiin onnistuneesti"
 	}
 }

@@ -23,6 +23,10 @@ Copyright (c) 2017 Ilari Pihlajisto
       td, th {
         text-align: left;
       }
+
+      paper-button.red {
+        background-color: red;
+      }
     </style>
 
     <app-route
@@ -74,7 +78,10 @@ Copyright (c) 2017 Ilari Pihlajisto
           </tbody>
         </table>
 
-        <paper-button raised class="primary" on-tap="resetPassword">[[localize('reset_password')]]</paper-button>
+        <div class="wrapper-btns">
+          <paper-button raised class="primary" on-tap="resetPassword">[[localize('reset_password')]]</paper-button>
+          <paper-button raised class="primary red" on-tap="deleteUser">[[localize('delete_user')]]</paper-button>
+        </div>
 
         <h1>[[localize('bookings')]]</h1>
         <table>
@@ -126,6 +133,15 @@ Copyright (c) 2017 Ilari Pihlajisto
       content-type="application/json"
       handle-as="text"
       on-response="handleUpdateUserPasswordResponse"
+      on-error="handleError">
+    </iron-ajax>
+    <iron-ajax
+      id="deleteUserAjax"
+      url="/api/delete_user"
+      method="post"
+      content-type="application/json"
+      handle-as="text"
+      on-response="handleDeleteUserResponse"
       on-error="handleError">
     </iron-ajax>
   </template>
@@ -226,6 +242,21 @@ Copyright (c) 2017 Ilari Pihlajisto
       handleUpdateUserPasswordResponse(event) {
         this.error = '';
         this.success = this.localize('new_password') + ': ' + this.newPassword;
+      }
+
+      deleteUser() {
+        if (!confirm(this.localize('confirm_delete_user'))) {
+          return;
+        }
+        this.$.deleteUserAjax.body = {
+          username: this.user.username
+        };
+        this.$.deleteUserAjax.generateRequest();
+      }
+
+      handleDeleteUserResponse(event) {
+        this.error = '';
+        this.success = this.localize('delete_user_success');
       }
     }
 
