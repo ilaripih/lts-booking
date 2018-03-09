@@ -192,6 +192,9 @@ Copyright (c) 2017 Ilari Pihlajisto
         }
 
         var courts = courtsChange.base;
+        if (!courts) {
+          return null;
+        }
         var ts = new Date(date);
         var day = ts.getDay();
         var dayStr = 'week_days';
@@ -322,6 +325,9 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
 
       computeGroups(courts) {
+        if (!courts) {
+          return [];
+        }
         var groups = _.uniq(courts.map(function(court) {
           return court.group;
         }));

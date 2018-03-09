@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 	"github.com/gorilla/context"
@@ -240,7 +241,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request, m map[string]interfac
 		return http.StatusBadRequest, errors.New("open_registration_disallowed")
 	}
 
-	username := m["username"].(string)
+	username := strings.TrimSpace(m["username"].(string))
 	password := m["password"].(string)
 
 	if len(username) < 4 {
