@@ -8,6 +8,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
 <link rel="import" href="../bower_components/vaadin-grid/vaadin-grid-sorter.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid-filter.html">
 <link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
@@ -56,12 +57,14 @@ Copyright (c) 2017 Ilari Pihlajisto
           <vaadin-grid-column>
             <template class="header">
               <vaadin-grid-sorter path="username">[[localize('username')]]</vaadin-grid-sorter>
+              <vaadin-grid-filter path="username"></vaadin-grid-filter>
             </template>
             <template><a href="/user/[[item.username]]">[[item.username]]</a></template>
           </vaadin-grid-column>
           <vaadin-grid-column>
             <template class="header">
               <vaadin-grid-sorter path="name">[[localize('name')]]</vaadin-grid-sorter>
+              <vaadin-grid-filter path="name"></vaadin-grid-filter>
             </template>
             <template>[[item.name]]</template>
           </vaadin-grid-column>
