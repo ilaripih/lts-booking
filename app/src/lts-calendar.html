@@ -23,31 +23,48 @@ Copyright (c) 2017 Ilari Pihlajisto
         max-width: 26.3em;
       }
 
-      th {
+      .rTable {
         font-size: 0.9em;
+        display: table;
+        width: 100%;
+        border-collapse: collapse;
       }
 
-      th, td {
+      .rTableRow {
+        display: table-row;
+      }
+
+      .rTableRow:first-child {
+        border-top: 1px solid grey;
+      }
+
+      .rTableRow:nth-child(even) {
+        border-bottom: 1px solid grey;
+      }
+
+      .rTableCell:not(:first-child):not([data-bookable]) {
+        background-color: #d8d8d8;
+      }
+
+      .rTableRow:nth-child(even) label {
+        visibility: hidden;
+      }
+
+      .rTableHead {
+        display: table-header-group;
+        font-weight: bold;
+      }
+
+      .rTableCell, .rTableHead {
+        display: table-cell;
         padding: 0 4px;
         text-align: center;
         border-left: 1px solid grey;
         border-right: 1px solid grey;
       }
 
-      tr:first-child {
-        border-top: 1px solid grey;
-      }
-
-      tr:nth-child(even), td:not(:first-child) {
-        border-bottom: 1px solid grey;
-      }
-
-      td:not(:first-child):not([data-bookable]) {
-        background-color: #d8d8d8;
-      }
-
-      tr:nth-child(even) label {
-        visibility: hidden;
+      .rTableBody {
+        display: table-row-group;
       }
 
       i {
@@ -73,23 +90,21 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       <vaadin-date-picker id="date" i18n="[[_dateLocale(localize)]]" auto-validate label="[[localize('date')]]" value="{{date}}"></vaadin-date-picker>
 
-      <table>
-        <thead>
-          <tr>
-            <th>[[localize('time')]]</th>
-            <template is="dom-repeat" items="[[filteredCourts]]">
-              <th>[[item.name]]</th>
-            </template>
-          </tr>
-        </thead>
-        <tbody>
+      <div class="rTable">
+        <div class="rTableRow">
+          <div class="rTableHead">[[localize('time')]]</div>
+          <template is="dom-repeat" items="[[filteredCourts]]">
+            <div class="rTableHead">[[item.name]]</div>
+          </template>
+        </div>
+        <div class="rTableBody">
           <template is="dom-repeat" items="[[grid]]" as="timeslot">
-            <tr>
-              <td>
+            <div class="rTableRow">
+              <div class="rTableCell">
                 <label>[[_intToTime(timeslot.time)]]</label>
-              </td>
+              </div>
               <template is="dom-repeat" items="[[timeslot.available]]" as="bookingCell">
-                <td data-bookable$="[[bookingCell.bookable]]" data-court-id$="[[bookingCell.court_id]]">
+                <div class="rTableCell" data-bookable$="[[bookingCell.bookable]]" data-court-id$="[[bookingCell.court_id]]">
                   <template is="dom-if" if="[[bookingCell.court_id]]">
                     <a href="/book/[[bookingCell.court_id]]/[[date]]/[[timeslot.time]]">[[localize('book')]]</a>
                   </template>
@@ -101,12 +116,12 @@ Copyright (c) 2017 Ilari Pihlajisto
                       <i>[[bookingCell.title]]</i>
                     </template>
                   </template>
-                </td>
+                </div>
               </template>
-            </tr>
+            </div>
           </template>
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
 
     <iron-ajax
