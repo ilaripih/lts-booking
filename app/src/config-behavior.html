@@ -75,6 +75,12 @@
           timeZone: 'Europe/Helsinki'
         });
         var parts = s.split('.');
+        if (parts.length < 2) {
+          parts = s.split(':');
+        }
+        parts = parts.map(function(part) {
+          return part.replace(/\D/g,'');
+        });
         return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
       } catch (e) {
         return (ts.getHours() * 60) + ts.getMinutes();
