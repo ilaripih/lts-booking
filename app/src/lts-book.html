@@ -239,8 +239,8 @@ Copyright (c) 2017 Ilari Pihlajisto
         if (bookings) {
           bookings.forEach(function(booking) {
             var bBegin = new Date(booking.begin);
-            booked.push((bBegin.getHours() * 60) + bBegin.getMinutes());
-          });
+            booked.push(this._getMinutes(bBegin));
+          }.bind(this));
         }
 
         const tStep = this.court.hour_precision ? 60 : 30;
