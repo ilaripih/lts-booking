@@ -439,7 +439,7 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 func updateUserPasswordHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	newPassword := m["new_password"].(string)
 
-	if len(newPassword) < 8 {
+	if len(newPassword) < 6 {
 		return http.StatusBadRequest, errors.New("short_password")
 	}
 
