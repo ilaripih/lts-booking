@@ -60,18 +60,24 @@ type Court struct {
 	HourPrecision      bool            `json:"hour_precision" bson:"hour_precision"`
 }
 
+type Cancellation struct {
+	Begin time.Time `json:"begin" bson:"begin"`
+	End   time.Time `json:"end" bson:"end"`
+}
+
 type Booking struct {
-	Id          bson.ObjectId  `json:"_id" bson:"_id"`
-	UserName    string         `json:"username" bson:"username"`
-	Title       string         `json:"title" bson:"title"`
-	CourtId     bson.ObjectId  `json:"court_id" bson:"court_id"`
-	Begin       time.Time      `json:"begin" bson:"begin"`
-	End         time.Time      `json:"end" bson:"end"`
-	CreatedAt   time.Time      `bson:"created_at" json:"-"`
-	PaidAt      *time.Time     `bson:"paid_at" json:"paid_at"`
-	PaymentType string         `bson:"payment_type" json:"payment_type"`
-	WeekDay     int            `bson:"weekday" json:"weekday"`
-	Parent      *bson.ObjectId `json:"parent" bson:"parent"`
+	Id            bson.ObjectId  `json:"_id" bson:"_id"`
+	UserName      string         `json:"username" bson:"username"`
+	Title         string         `json:"title" bson:"title"`
+	CourtId       bson.ObjectId  `json:"court_id" bson:"court_id"`
+	Begin         time.Time      `json:"begin" bson:"begin"`
+	End           time.Time      `json:"end" bson:"end"`
+	CreatedAt     time.Time      `bson:"created_at" json:"-"`
+	PaidAt        *time.Time     `bson:"paid_at" json:"paid_at"`
+	PaymentType   string         `bson:"payment_type" json:"payment_type"`
+	WeekDay       int            `bson:"weekday" json:"weekday"`
+	Parent        *bson.ObjectId `json:"parent" bson:"parent"`
+	Cancellations []Cancellation `json:"cancellations" bson:"cancellations"`
 }
 
 type UserDetailDependency struct {
@@ -663,6 +669,14 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 
 	find := bson.M{
 		"end": bson.M{"$lte": end},
+		"cancellations": bson.M{
+			"$not": bson.M{
+				"$elemMatch": bson.M{
+					"begin": bson.M{"$gte": begin},
+					"end":   bson.M{"$lte": end},
+				},
+			},
+		},
 	}
 	if !recurring {
 		find["begin"] = bson.M{"$gte": begin}
@@ -830,6 +844,14 @@ func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (b
 				"weekday": int(begin.Weekday()),
 			},
 		},
+		"cancellations": bson.M{
+			"$not": bson.M{
+				"$elemMatch": bson.M{
+					"begin": bson.M{"$lt": end},
+					"end":   bson.M{"$gt": begin},
+				},
+			},
+		},
 	}).All(&bookings); err != nil {
 		return false, err
 	}
@@ -995,8 +1017,39 @@ func cancelBookingHandler(w http.ResponseWriter, r *http.Request, m map[string]i
 
 	s := mongo.Copy()
 	defer s.Close()
-
 	c := s.DB("").C("bookings")
+
+	date, ok := m["date"]
+	if ok && sess.Values["level"] == "admin" {
+		dateStr := date.(string)
+		begin, err := generateTimestamp(dateStr, 0)
+		if err != nil {
+			return http.StatusBadRequest, err
+		}
+		end, err := generateTimestamp(dateStr, (24*60)-1)
+		if err != nil {
+			return http.StatusBadRequest, err
+		}
+
+		if _, err := c.UpdateAll(bson.M{
+			"$or": []bson.M{
+				bson.M{"_id": id},
+				bson.M{"parent": id},
+			},
+		}, bson.M{
+			"$push": bson.M{
+				"cancellations": bson.M{
+					"begin": begin,
+					"end":   end,
+				},
+			},
+		}); err != nil {
+			return http.StatusBadRequest, err
+		}
+
+		return http.StatusOK, nil
+	}
+
 	var booking Booking
 	if err := c.Find(bson.M{"_id": id}).One(&booking); err != nil {
 		return http.StatusNotFound, err
