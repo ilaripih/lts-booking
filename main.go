@@ -12,86 +12,87 @@ import (
 	"strings"
 	"sync"
 	"time"
+
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type CustomField struct {
-	Name string `json:"name" bson:"name"`
+	Name  string `json:"name" bson:"name"`
 	Value string `json:"value" bson:"value"`
 }
 
 type User struct {
-	Username string `json:"username" bson:"username"`
-	Name string `json:"name" bson:"name"`
-	Email string `json:"email" bson:"email"`
-	StreetAddress string `json:"street_address" bson:"street_address"`
-	PostalCode string `json:"postal_code" bson:"postal_code"`
-	PhoneNumber string `json:"phone_number" bson:"phone_number"`
-	LtsMember bool `json:"lts_member" bson:"lts_member"`
-	Level string `json:"level" bson:"level"`
-	Password string `bson:"password" json:"-"`
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
-	Disabled bool `bson:"disabled" json:"disabled"`
-	Custom []CustomField `json:"custom" bson:"custom"`
+	Username      string        `json:"username" bson:"username"`
+	Name          string        `json:"name" bson:"name"`
+	Email         string        `json:"email" bson:"email"`
+	StreetAddress string        `json:"street_address" bson:"street_address"`
+	PostalCode    string        `json:"postal_code" bson:"postal_code"`
+	PhoneNumber   string        `json:"phone_number" bson:"phone_number"`
+	LtsMember     bool          `json:"lts_member" bson:"lts_member"`
+	Level         string        `json:"level" bson:"level"`
+	Password      string        `bson:"password" json:"-"`
+	CreatedAt     time.Time     `bson:"created_at" json:"created_at"`
+	Disabled      bool          `bson:"disabled" json:"disabled"`
+	Custom        []CustomField `json:"custom" bson:"custom"`
 }
 
 type Court struct {
-	Id bson.ObjectId `json:"_id" bson:"_id"`
-	Name string `json:"name" bson:"name"`
-	BookingText string `json:"booking_text" bson:"booking_text"`
-	MaxBookingLength int `json:"max_booking_length" bson:"max_booking_length"`
-	MaxBookings int `json:"max_bookings" bson:"max_bookings"`
-	CancellationPeriod int `json:"cancellation_period" bson:"cancellation_period"`
-	WeekDaysOpen int `json:"week_days_open" bson:"week_days_open"`
-	WeekDaysClose int `json:"week_days_close" bson:"week_days_close"`
-	SaturdayOpen int `json:"saturday_open" bson:"saturday_open"`
-	SaturdayClose int `json:"saturday_close" bson:"saturday_close"`
-	SundayOpen int `json:"sunday_open" bson:"sunday_open"`
-	SundayClose int `json:"sunday_close" bson:"sunday_close"`
-	CreatedAt time.Time `bson:"created_at" json:"-"`
-	Group string `json:"group" bson:"group"`
-	Targets []bson.ObjectId `json:"targets" bson:"targets"`
-	HourPrecision bool `json:"hour_precision" bson:"hour_precision"`
+	Id                 bson.ObjectId   `json:"_id" bson:"_id"`
+	Name               string          `json:"name" bson:"name"`
+	BookingText        string          `json:"booking_text" bson:"booking_text"`
+	MaxBookingLength   int             `json:"max_booking_length" bson:"max_booking_length"`
+	MaxBookings        int             `json:"max_bookings" bson:"max_bookings"`
+	CancellationPeriod int             `json:"cancellation_period" bson:"cancellation_period"`
+	WeekDaysOpen       int             `json:"week_days_open" bson:"week_days_open"`
+	WeekDaysClose      int             `json:"week_days_close" bson:"week_days_close"`
+	SaturdayOpen       int             `json:"saturday_open" bson:"saturday_open"`
+	SaturdayClose      int             `json:"saturday_close" bson:"saturday_close"`
+	SundayOpen         int             `json:"sunday_open" bson:"sunday_open"`
+	SundayClose        int             `json:"sunday_close" bson:"sunday_close"`
+	CreatedAt          time.Time       `bson:"created_at" json:"-"`
+	Group              string          `json:"group" bson:"group"`
+	Targets            []bson.ObjectId `json:"targets" bson:"targets"`
+	HourPrecision      bool            `json:"hour_precision" bson:"hour_precision"`
 }
 
 type Booking struct {
-	Id bson.ObjectId `json:"_id" bson:"_id"`
-	UserName string `json:"username" bson:"username"`
-	Title string `json:"title" bson:"title"`
-	CourtId bson.ObjectId `json:"court_id" bson:"court_id"`
-	Begin time.Time `json:"begin" bson:"begin"`
-	End time.Time `json:"end" bson:"end"`
-	CreatedAt time.Time `bson:"created_at" json:"-"`
-	PaidAt *time.Time `bson:"paid_at" json:"paid_at"`
-	PaymentType string `bson:"payment_type" json:"payment_type"`
-	WeekDay int `bson:"weekday" json:"weekday"`
-	Parent *bson.ObjectId `json:"parent" bson:"parent"`
+	Id          bson.ObjectId  `json:"_id" bson:"_id"`
+	UserName    string         `json:"username" bson:"username"`
+	Title       string         `json:"title" bson:"title"`
+	CourtId     bson.ObjectId  `json:"court_id" bson:"court_id"`
+	Begin       time.Time      `json:"begin" bson:"begin"`
+	End         time.Time      `json:"end" bson:"end"`
+	CreatedAt   time.Time      `bson:"created_at" json:"-"`
+	PaidAt      *time.Time     `bson:"paid_at" json:"paid_at"`
+	PaymentType string         `bson:"payment_type" json:"payment_type"`
+	WeekDay     int            `bson:"weekday" json:"weekday"`
+	Parent      *bson.ObjectId `json:"parent" bson:"parent"`
 }
 
 type UserDetailDependency struct {
-	Name string `json:"name" bson:"name"`
+	Name  string `json:"name" bson:"name"`
 	Value string `json:"value" bson:"value"`
 }
 
 type CustomUserDetail struct {
-	Name string `json:"name" bson:"name"`
-	Type int `json:"type" bson:"type"`
-	Options []string `json:"options" bson:"options"`
+	Name       string                `json:"name" bson:"name"`
+	Type       int                   `json:"type" bson:"type"`
+	Options    []string              `json:"options" bson:"options"`
 	Dependency *UserDetailDependency `json:"dependency" bson:"dependency"`
-	Unique bool `json:"unique" bson:"unique"`
+	Unique     bool                  `json:"unique" bson:"unique"`
 }
 
 type Settings struct {
-	Id bson.ObjectId `json:"_id" bson:"_id"`
-	OpenRegistration bool `json:"open_registration" bson:"open_registration"`
-	UserDetails []CustomUserDetail `json:"user_details" bson:"user_details"`
-	Groups []string `json:"groups" bson:"groups"`
-	HelpText string `json:"help_text" bson:"help_text"`
+	Id               bson.ObjectId      `json:"_id" bson:"_id"`
+	OpenRegistration bool               `json:"open_registration" bson:"open_registration"`
+	UserDetails      []CustomUserDetail `json:"user_details" bson:"user_details"`
+	Groups           []string           `json:"groups" bson:"groups"`
+	HelpText         string             `json:"help_text" bson:"help_text"`
 }
 
 var mongo *mgo.Session
@@ -123,23 +124,23 @@ func getUser(username string) (*User, error) {
 }
 
 func saveSession(w http.ResponseWriter, r *http.Request, user *User) error {
-    sess, err := store.Get(r, "user")
-    if err != nil {
-    	log.Println("Could not save user session")
-        return err
-    }
+	sess, err := store.Get(r, "user")
+	if err != nil {
+		log.Println("Could not save user session")
+		return err
+	}
 
-    sess.Values["username"] = user.Username
-    sess.Values["name"] = user.Name
-    sess.Values["email"] = user.Email
-    sess.Values["street_address"] = user.StreetAddress
-    sess.Values["postal_code"] = user.PostalCode
-    sess.Values["phone_number"] = user.PhoneNumber
-    sess.Values["lts_member"] = user.LtsMember
-    sess.Values["level"] = user.Level
-    sess.Save(r, w)
+	sess.Values["username"] = user.Username
+	sess.Values["name"] = user.Name
+	sess.Values["email"] = user.Email
+	sess.Values["street_address"] = user.StreetAddress
+	sess.Values["postal_code"] = user.PostalCode
+	sess.Values["phone_number"] = user.PhoneNumber
+	sess.Values["lts_member"] = user.LtsMember
+	sess.Values["level"] = user.Level
+	sess.Save(r, w)
 
-    return nil
+	return nil
 }
 
 func myHandler(fn func(http.ResponseWriter, *http.Request, map[string]interface{}, *sessions.Session) (int, error), auth string, required ...string) http.HandlerFunc {
@@ -378,7 +379,7 @@ func checkUniqueField(username, key, value string) error {
 		"username": bson.M{"$ne": username},
 		"custom": bson.M{
 			"$elemMatch": bson.M{
-				"name": key,
+				"name":  key,
 				"value": value,
 			},
 		},
@@ -406,11 +407,11 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 	sess.Save(r, w)
 
 	updateObj := bson.M{
-		"name": name,
-		"email": email,
+		"name":           name,
+		"email":          email,
 		"street_address": streetAddress,
-		"postal_code": postalCode,
-		"phone_number": phoneNumber,
+		"postal_code":    postalCode,
+		"phone_number":   phoneNumber,
 	}
 	if val, ok := m["custom"]; ok {
 		customArr := m["custom"].([]interface{})
@@ -534,19 +535,19 @@ func saveCourtHandler(w http.ResponseWriter, r *http.Request, m map[string]inter
 	idStr := m["_id"].(string)
 	var id bson.ObjectId
 	data := bson.M{
-		"name": m["name"].(string),
-		"booking_text": m["booking_text"].(string),
-		"max_booking_length": int(m["max_booking_length"].(float64)),
-		"max_bookings": int(m["max_bookings"].(float64)),
+		"name":                m["name"].(string),
+		"booking_text":        m["booking_text"].(string),
+		"max_booking_length":  int(m["max_booking_length"].(float64)),
+		"max_bookings":        int(m["max_bookings"].(float64)),
 		"cancellation_period": int(m["cancellation_period"].(float64)),
-		"week_days_open": int(m["week_days_open"].(float64)),
-		"week_days_close": int(m["week_days_close"].(float64)),
-		"saturday_open": int(m["saturday_open"].(float64)),
-		"saturday_close": int(m["saturday_close"].(float64)),
-		"sunday_open": int(m["sunday_open"].(float64)),
-		"sunday_close": int(m["sunday_close"].(float64)),
-		"group": m["group"].(string),
-		"hour_precision": m["hour_precision"].(bool),
+		"week_days_open":      int(m["week_days_open"].(float64)),
+		"week_days_close":     int(m["week_days_close"].(float64)),
+		"saturday_open":       int(m["saturday_open"].(float64)),
+		"saturday_close":      int(m["saturday_close"].(float64)),
+		"sunday_open":         int(m["sunday_open"].(float64)),
+		"sunday_close":        int(m["sunday_close"].(float64)),
+		"group":               m["group"].(string),
+		"hour_precision":      m["hour_precision"].(bool),
 	}
 
 	if val, ok := m["targets"]; ok {
@@ -643,11 +644,11 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	beginStr := m["date_begin"].(string)
 	endStr := m["date_end"].(string)
 	const shortForm = "2006-01-02 15:04:05"
-	begin, err := time.ParseInLocation(shortForm, beginStr + " 00:00:00", loc)
+	begin, err := time.ParseInLocation(shortForm, beginStr+" 00:00:00", loc)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	end, err := time.ParseInLocation(shortForm, endStr + " 23:59:59", loc)
+	end, err := time.ParseInLocation(shortForm, endStr+" 23:59:59", loc)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -677,13 +678,13 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	}
 
 	fields := bson.M{
-		"_id": 1,
+		"_id":      1,
 		"court_id": 1,
-		"begin": 1,
-		"end": 1,
-		"title": 1,
-		"weekday": 1,
-		"parent": 1,
+		"begin":    1,
+		"end":      1,
+		"title":    1,
+		"weekday":  1,
+		"parent":   1,
 	}
 	if val, ok := m["court_id"]; ok {
 		idStr := val.(string)
@@ -823,7 +824,7 @@ func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (b
 		"$or": []bson.M{
 			bson.M{
 				"begin": bson.M{"$lt": end},
-				"end": bson.M{"$gt": begin},
+				"end":   bson.M{"$gt": begin},
 			},
 			bson.M{
 				"weekday": int(begin.Weekday()),
@@ -833,13 +834,13 @@ func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (b
 		return false, err
 	}
 
-	tBegin := begin.Hour() * 60 + begin.Minute()
-	tEnd := end.Hour() * 60 + end.Minute()
+	tBegin := begin.Hour()*60 + begin.Minute()
+	tEnd := end.Hour()*60 + end.Minute()
 	for _, b := range bookings {
 		bBeginLoc := b.Begin.In(loc)
 		bEndLoc := b.End.In(loc)
-		bBegin := bBeginLoc.Hour() * 60 + bBeginLoc.Minute()
-		bEnd := bEndLoc.Hour() * 60 + bEndLoc.Minute()
+		bBegin := bBeginLoc.Hour()*60 + bBeginLoc.Minute()
+		bEnd := bEndLoc.Hour()*60 + bEndLoc.Minute()
 		if tBegin < bEnd && tEnd > bBegin {
 			return true, nil
 		}
@@ -849,6 +850,7 @@ func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (b
 }
 
 var bookHandlerMutex sync.Mutex
+
 func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	isAdmin := (sess.Values["level"] == "admin")
 	if !isAdmin && !hasFullUserDetails(sess) {
@@ -921,14 +923,14 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	for _, cId := range courtIds {
 		c = s.DB("").C("courts")
 		if err := c.Find(bson.M{
-			"_id": cId,
-			fieldOpen: bson.M{"$lte": beginNum},
+			"_id":      cId,
+			fieldOpen:  bson.M{"$lte": beginNum},
 			fieldClose: bson.M{"$gte": endNum},
 		}).One(&court); err != nil {
 			return http.StatusBadRequest, errors.New("court_unavailable")
 		}
 
-		if !isAdmin && court.MaxBookingLength * 60 < (endNum - beginNum) {
+		if !isAdmin && court.MaxBookingLength*60 < (endNum-beginNum) {
 			return http.StatusBadRequest, errors.New("max_booking_length_exceeded")
 		}
 
@@ -946,7 +948,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 			count, err := c.Find(bson.M{
 				"username": sess.Values["username"],
 				"court_id": cId,
-				"begin": bson.M{"$gt": now},
+				"begin":    bson.M{"$gt": now},
 			}).Count()
 			if err != nil {
 				return http.StatusInternalServerError, err
@@ -960,13 +962,13 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	parentId := bson.NewObjectId()
 	for _, cId := range courtIds {
 		booking := bson.M{
-			"username": sess.Values["username"],
-			"title": title,
-			"court_id": cId,
-			"begin": begin,
-			"end": end,
+			"username":   sess.Values["username"],
+			"title":      title,
+			"court_id":   cId,
+			"begin":      begin,
+			"end":        end,
 			"created_at": &now,
-			"weekday": dayOfWeek,
+			"weekday":    dayOfWeek,
 		}
 		var id bson.ObjectId
 		if cId != courtId {
@@ -1256,26 +1258,26 @@ func updateUserDisabledHandler(w http.ResponseWriter, r *http.Request, m map[str
 }
 
 func serveIndex(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, appDir + "/index.html")
+	http.ServeFile(w, r, appDir+"/index.html")
 }
 
 func addIndexes(s *mgo.Session) error {
 	m := make(map[string][]mgo.Index)
 
 	m["users"] = append(m["users"], mgo.Index{
-		Key: []string{"username"},
+		Key:    []string{"username"},
 		Unique: true,
 	})
 	m["courts"] = append(m["courts"], mgo.Index{
-		Key: []string{"name"},
+		Key:    []string{"name"},
 		Unique: true,
 	})
 	m["bookings"] = append(m["bookings"], mgo.Index{
-		Key: []string{"begin"},
+		Key:    []string{"begin"},
 		Unique: false,
 	})
 	m["bookings"] = append(m["bookings"], mgo.Index{
-		Key: []string{"end"},
+		Key:    []string{"end"},
 		Unique: false,
 	})
 
@@ -1310,9 +1312,9 @@ func main() {
 	}
 
 	certManager := autocert.Manager{
-		Prompt: autocert.AcceptTOS,
+		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist(os.Getenv("LTS_BOOKING_DOMAIN")),
-		Cache: autocert.DirCache("certs"),
+		Cache:      autocert.DirCache("certs"),
 	}
 
 	fs := http.FileServer(http.Dir(appDir))
@@ -1352,12 +1354,12 @@ func main() {
 	port := os.Getenv("LTS_BOOKING_PORT")
 	if port != "" {
 		log.Println("Listening at localhost:" + port)
-		err = http.ListenAndServe(":" + port, context.ClearHandler(http.DefaultServeMux))
+		err = http.ListenAndServe(":"+port, context.ClearHandler(http.DefaultServeMux))
 	} else {
 		go http.ListenAndServe(":http", certManager.HTTPHandler(nil))
 
 		server := &http.Server{
-			Addr: ":https",
+			Addr:    ":https",
 			Handler: context.ClearHandler(http.DefaultServeMux),
 			TLSConfig: &tls.Config{
 				GetCertificate: certManager.GetCertificate,
