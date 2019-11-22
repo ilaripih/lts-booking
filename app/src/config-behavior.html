@@ -172,14 +172,23 @@
       var begin = new Date(booking.begin);
       var end = new Date(booking.end);
       var str = '';
+      var expiresAt = null;
       if (!('weekday' in booking) || booking.weekday == -1) {
         str = ConfigImpl._formatDate(begin);
       } else {
         var wd = ConfigImpl._weekDaysShort(localize);
         str = wd[booking.weekday];
+        if ('expires_at' in booking) {
+          expiresAt = booking.expires_at;
+        }
       }
       str += ' ' + ConfigImpl._intToTime(ConfigImpl._getMinutes(begin));
       str += ' - ' + ConfigImpl._intToTime(ConfigImpl._getMinutes(end));
+
+      if (expiresAt) {
+        str += ' ⇥ ' + ConfigImpl._formatDate(expiresAt);
+      }
+
       return str;
     }
   };

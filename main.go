@@ -74,6 +74,7 @@ type Booking struct {
 	End           time.Time      `json:"end" bson:"end"`
 	CreatedAt     time.Time      `bson:"created_at" json:"-"`
 	PaidAt        *time.Time     `bson:"paid_at" json:"paid_at"`
+	ExpiresAt     *time.Time     `bson:"expires_at" json:"expires_at"`
 	PaymentType   string         `bson:"payment_type" json:"payment_type"`
 	WeekDay       int            `bson:"weekday" json:"weekday"`
 	Parent        *bson.ObjectId `json:"parent" bson:"parent"`
@@ -687,18 +688,22 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 			},
 			bson.M{
 				"weekday": int(begin.Weekday()),
+				"expires_at": bson.M{
+					"$not": bson.M{"$lte": end},
+				},
 			},
 		}
 	}
 
 	fields := bson.M{
-		"_id":      1,
-		"court_id": 1,
-		"begin":    1,
-		"end":      1,
-		"title":    1,
-		"weekday":  1,
-		"parent":   1,
+		"_id":        1,
+		"court_id":   1,
+		"begin":      1,
+		"end":        1,
+		"title":      1,
+		"weekday":    1,
+		"parent":     1,
+		"expires_at": 1,
 	}
 	if val, ok := m["court_id"]; ok {
 		idStr := val.(string)
@@ -842,6 +847,9 @@ func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (b
 			},
 			bson.M{
 				"weekday": int(begin.Weekday()),
+				"expires_at": bson.M{
+					"$not": bson.M{"$lte": end},
+				},
 			},
 		},
 		"cancellations": bson.M{
@@ -1084,7 +1092,7 @@ func setBookingPaymentHandler(w http.ResponseWriter, r *http.Request, m map[stri
 		return http.StatusNotFound, errors.New("not_found")
 	}
 	id := bson.ObjectIdHex(idStr)
-	values := bson.M{"_id": id}
+	values := bson.M{}
 
 	paymentType := m["payment_type"]
 	if paymentType == "not_paid" {
@@ -1096,11 +1104,31 @@ func setBookingPaymentHandler(w http.ResponseWriter, r *http.Request, m map[stri
 	}
 	values["payment_type"] = paymentType
 
+	var expiresAtPtr *time.Time
+	expiresAtRaw, ok := m["expires_at"]
+	if ok {
+		expiresAtStr, ok := expiresAtRaw.(string)
+		if ok && len(expiresAtStr) > 0 {
+			const shortForm = "2006-01-02 15:04:05"
+			expiresAt, err := time.ParseInLocation(shortForm, expiresAtStr+" 23:59:59", loc)
+			if err != nil {
+				return http.StatusBadRequest, err
+			}
+			expiresAtPtr = &expiresAt
+		}
+	}
+	values["expires_at"] = expiresAtPtr
+
 	s := mongo.Copy()
 	defer s.Close()
 	c := s.DB("").C("bookings")
 
-	if err := c.Update(bson.M{"_id": id}, bson.M{"$set": values}); err != nil {
+	if _, err := c.UpdateAll(bson.M{
+		"$or": []bson.M{
+			bson.M{"_id": id},
+			bson.M{"parent": id},
+		},
+	}, bson.M{"$set": values}); err != nil {
 		return http.StatusNotFound, err
 	}
 

@@ -129,6 +129,7 @@
 		"confirm_reset_user_password": "Haluatko varmasti resetoida käyttäjän salasanan?",
 		"delete_user": "Poista käyttäjä",
 		"confirm_delete_user": "Haluatko varmasti poistaa käyttäjän?",
-		"delete_user_success": "Käyttäjä poistettiin onnistuneesti"
+		"delete_user_success": "Käyttäjä poistettiin onnistuneesti",
+		"last_day": "Viimeinen päivä"
 	}
 }

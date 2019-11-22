@@ -12,6 +12,9 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../bower_components/vaadin-material-theme/vaadin-date-picker.html">
+<link rel="import" href="../bower_components/vaadin-date-picker/vaadin-date-picker.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-edit-booking">
@@ -80,6 +83,14 @@ Copyright (c) 2017 Ilari Pihlajisto
               <td><strong>[[localize('date')]]</strong></td>
               <td>[[_bookingTimes(booking, localize)]]</td>
             </tr>
+            <template is="dom-if" if="[[_canExpire(booking)]]">
+              <tr>
+                <td><strong>[[localize('last_day')]]</strong></td>
+                <td>
+                  <vaadin-date-picker id="date" i18n="[[_dateLocale(localize)]]" auto-validate label="[[localize('date')]]" value="{{expires_at}}"></vaadin-date-picker>
+                </td>
+              </tr>
+            </template>
             <tr>
               <td><strong>[[localize('court')]]</strong></td>
               <td>[[_courtName(booking.court_id)]]</td>
@@ -150,7 +161,8 @@ Copyright (c) 2017 Ilari Pihlajisto
         return _.defaults({
           error: String,
           success: String,
-          booking: Object
+          booking: Object,
+          expires_at: String,
         }, ConfigImpl.properties);
       }
 
@@ -190,9 +202,18 @@ Copyright (c) 2017 Ilari Pihlajisto
         return '?';
       }
 
+      _canExpire(booking) {
+        return ('weekday' in booking) && (booking.weekday != -1);
+      }
+
       handleBookingResponse(event) {
         this.error = '';
         this.booking = JSON.parse(event.detail.response);
+        if (this.booking.expires_at) {
+          this.expires_at = ConfigImpl._pickerDate(new Date(this.booking.expires_at));
+        } else {
+          this.expires_at = "";
+        }
       }
 
       handleBookingError(event) {
@@ -203,7 +224,8 @@ Copyright (c) 2017 Ilari Pihlajisto
       postSave() {
         this.$.saveAjax.body = {
           _id: this.booking._id,
-          payment_type: this.$.paymentType.selected
+          payment_type: this.$.paymentType.selected,
+          expires_at: this.expires_at
         };
         this.$.saveAjax.generateRequest();
       }
