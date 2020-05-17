@@ -840,10 +840,10 @@ func isCourtBooked(id bson.ObjectId, begin, end time.Time, c *mgo.Collection) (b
 	var bookings []Booking
 	if err := c.Find(bson.M{
 		"court_id": id,
+		"begin":    bson.M{"$lt": end},
 		"$or": []bson.M{
 			bson.M{
-				"begin": bson.M{"$lt": end},
-				"end":   bson.M{"$gt": begin},
+				"end": bson.M{"$gt": begin},
 			},
 			bson.M{
 				"weekday": int(begin.Weekday()),

@@ -1,4 +1,4 @@
-FROM golang:1.8
+FROM golang:latest
 
 RUN \
   go get github.com/gorilla/context && \

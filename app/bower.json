@@ -27,7 +27,7 @@
     "neon-animation": "PolymerElements/neon-animation#v2.2.1",
     "paper-listbox": "PolymerElements/paper-listbox#v2.1.0",
     "paper-item": "PolymerElements/paper-item#v2.1.0",
-    "sugar": "^2.0.4",
+    "sugar": "2.0.4",
     "iron-a11y-keys": "v2.1.0",
     "web-animations-js": "2.3.1",
     "iron-ajax": "PolymerElements/iron-ajax#v2.1.3",
