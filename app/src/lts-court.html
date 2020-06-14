@@ -227,13 +227,13 @@ Copyright (c) 2017 Ilari Pihlajisto
         var data = {
           _id: this._id,
           name: this.formData.name,
-          booking_text: this.formData.booking_text,
+          booking_text: this.formData.booking_text || "",
           max_booking_length: parseInt(this.formData.max_booking_length),
           max_bookings: parseInt(this.formData.max_bookings),
           cancellation_period: parseInt(this.formData.cancellation_period),
           group: group,
           targets: this.formData.targets,
-          hour_precision: this.formData.hour_precision
+          hour_precision: Boolean(this.formData.hour_precision)
         };
         for (var key in this.formData) {
           if (_.includes(timeKeys, key)) {
