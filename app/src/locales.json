@@ -130,6 +130,7 @@
 		"delete_user": "Poista käyttäjä",
 		"confirm_delete_user": "Haluatko varmasti poistaa käyttäjän?",
 		"delete_user_success": "Käyttäjä poistettiin onnistuneesti",
-		"last_day": "Viimeinen päivä"
+		"last_day": "Viimeinen päivä",
+		"empty_value": "Arvo ei saa olla tyhjä"
 	}
 }

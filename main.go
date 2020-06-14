@@ -1287,6 +1287,31 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	return http.StatusOK, nil
 }
 
+func validateGroups(groups interface{}) error {
+	values, ok := groups.([]interface{})
+	if !ok {
+		return errors.New("Invalid type for groups")
+	}
+
+	keys := make(map[string]bool)
+	for _, val := range values {
+		strVal, ok := val.(string)
+		if !ok {
+			return errors.New("Invalid type for groups")
+		}
+		if strVal == "" {
+			return errors.New("empty_value")
+		}
+		_, ok = keys[strVal]
+		if ok {
+			return errors.New("already_exists")
+		}
+		keys[strVal] = true
+	}
+
+	return nil
+}
+
 func updateSettingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	s := mongo.Copy()
 	defer s.Close()
@@ -1302,6 +1327,9 @@ func updateSettingsHandler(w http.ResponseWriter, r *http.Request, m map[string]
 	}
 
 	if val, ok := m["groups"]; ok {
+		if err := validateGroups(val); err != nil {
+			return http.StatusBadRequest, err
+		}
 		obj["groups"] = val
 	}
 
