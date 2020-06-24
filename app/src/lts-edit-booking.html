@@ -107,9 +107,9 @@ Copyright (c) 2017 Ilari Pihlajisto
               <td><strong>[[localize('payment_type')]]</strong></td>
               <td>
                 <paper-radio-group id="paymentType" selected="[[_paymentType(booking.payment_type)]]">
-                  <paper-radio-button name="not_paid">[[localize('not_paid')]]</paper-radio-button>
-                  <paper-radio-button name="cash">[[localize('cash')]]</paper-radio-button>
-                  <paper-radio-button name="bank_transfer">[[localize('bank_transfer')]]</paper-radio-button>
+                  <paper-radio-button disabled="[[!isadmin]]" name="not_paid">[[localize('not_paid')]]</paper-radio-button>
+                  <paper-radio-button disabled="[[!isadmin]]" name="cash">[[localize('cash')]]</paper-radio-button>
+                  <paper-radio-button disabled="[[!isadmin]]" name="bank_transfer">[[localize('bank_transfer')]]</paper-radio-button>
                 </paper-radio-group>
               </td>
             </tr>
@@ -117,8 +117,12 @@ Copyright (c) 2017 Ilari Pihlajisto
         </table>
 
         <div class="wrapper-btns">
-          <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
-	        <paper-button raised class="primary red" on-tap="deleteBooking">[[localize('delete_booking')]]</paper-button>
+          <template is="dom-if" if="[[isadmin]]">
+            <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
+          </template>
+          <template is="dom-if" if="[[_canCancel(booking)]]">
+            <paper-button raised class="primary red" on-tap="deleteBooking">[[localize('delete_booking')]]</paper-button>
+          </template>
           <paper-button class="link" on-tap="back">[[localize('back')]]</paper-button>
         </div>
       </div>
@@ -163,6 +167,10 @@ Copyright (c) 2017 Ilari Pihlajisto
           success: String,
           booking: Object,
           expires_at: String,
+          isadmin: {
+            type: Boolean,
+            value: false
+          },
         }, ConfigImpl.properties);
       }
 
@@ -200,6 +208,21 @@ Copyright (c) 2017 Ilari Pihlajisto
           return court.name;
         }
         return '?';
+      }
+
+      _canCancel(booking) {
+        if (this.isadmin) {
+          return true;
+        }
+
+        var begin = new Date(booking.begin);
+        var now = new Date();
+        var diff = (begin - now) / 3600000;
+
+        var court = _.find(this.courts, function(obj) {
+          return obj._id == booking.court_id;
+        });
+        return diff > court.cancellation_period;
       }
 
       _canExpire(booking) {
@@ -242,7 +265,7 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
 
       back() {
-        this.set('rootRoute.path', '/user/' + this.booking.username);
+        window.history.back();
       }
 
       deleteBooking() {

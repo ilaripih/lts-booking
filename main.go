@@ -704,6 +704,7 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 		"weekday":    1,
 		"parent":     1,
 		"expires_at": 1,
+		"username":   1,
 	}
 	if val, ok := m["court_id"]; ok {
 		idStr := val.(string)
@@ -712,8 +713,8 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 		}
 		find["court_id"] = bson.ObjectIdHex(idStr)
 	}
-	if sess.Values["level"] == "admin" {
-		fields["username"] = 1
+	isAdmin := (sess.Values["level"] == "admin")
+	if isAdmin {
 		fields["created_at"] = 1
 		fields["paid_at"] = 1
 		fields["payment_type"] = 1
@@ -724,10 +725,12 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	} else if _, ok := m["username"]; ok {
 		return http.StatusUnauthorized, errors.New("unauthorized")
 	}
+
+	myUsername := sess.Values["username"]
 	if val, ok := m["my_bookings"]; ok {
 		filterMyBookings := val.(bool)
 		if filterMyBookings {
-			find["username"] = sess.Values["username"]
+			find["username"] = myUsername
 		}
 	}
 
@@ -742,6 +745,14 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	var bookings []bson.M
 	if err := c.Find(find).Sort(sortDir + "begin").Select(fields).All(&bookings); err != nil {
 		return http.StatusInternalServerError, err
+	}
+
+	if !isAdmin {
+		for i := range bookings {
+			if bookings[i]["username"] != myUsername {
+				delete(bookings[i], "username")
+			}
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
