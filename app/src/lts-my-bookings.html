@@ -64,7 +64,7 @@ Copyright (c) 2017 Ilari Pihlajisto
           <tbody>
             <template is="dom-repeat" items="[[bookings]]" as="booking" filter="isVisible">
               <tr>
-                <td>[[_bookingTimes(booking, localize)]]</td>
+                <td><a href="/edit-booking/[[booking._id]]">[[_bookingTimes(booking, localize)]]</a></td>
                 <td>[[_courtName(booking.court_id)]]</td>
                 <template is="dom-if" if="[[isadmin]]">
                   <td>[[booking.title]]</td>
