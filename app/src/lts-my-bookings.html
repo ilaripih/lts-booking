@@ -41,14 +41,43 @@ Copyright (c) 2017 Ilari Pihlajisto
 
     <div class="card">
       <div id="authenticated">
-        <h1>[[localize('my_bookings')]]</h1>
-
         <template is="dom-if" if="[[error]]">
           <p class="alert-error">[[localize(error)]]</p>
         </template>
         <template is="dom-if" if="[[success]]">
           <p class="alert-success">[[localize(success)]]</p>
         </template>
+
+        <template is="dom-if" if="[[isadmin]]">
+          <h1>[[localize('my_weekly_bookings')]]</h1>
+
+          <table>
+            <thead>
+              <tr>
+                <th>[[localize('time')]]</th>
+                <th>[[localize('court')]]</th>
+                <th>[[localize('customer')]]</th>
+                <th>[[localize('cancel')]]</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template is="dom-repeat" items="[[weeklyBookings]]" as="booking" filter="isVisible">
+                <tr>
+                  <td><a href="/edit-booking/[[booking._id]]">[[_bookingTimes(booking, localize)]]</a></td>
+                  <td>[[_courtName(booking.court_id)]]</td>
+                  <td>[[booking.title]]</td>
+                  <td>
+                    <template is="dom-if" if="[[_canCancel(booking)]]">
+                      <paper-button raised on-tap="cancel" data-type="weekly" data-index$="[[index]]" data-db-id$="[[booking._id]]">[[localize('cancel')]]</paper-button>
+                    </template>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </template>
+
+        <h1>[[localize('my_bookings')]]</h1>
 
         <table>
           <thead>
@@ -62,7 +91,7 @@ Copyright (c) 2017 Ilari Pihlajisto
             </tr>
           </thead>
           <tbody>
-            <template is="dom-repeat" items="[[bookings]]" as="booking" filter="isVisible">
+            <template is="dom-repeat" items="[[oneOffBookings]]" as="booking" filter="isVisible">
               <tr>
                 <td><a href="/edit-booking/[[booking._id]]">[[_bookingTimes(booking, localize)]]</a></td>
                 <td>[[_courtName(booking.court_id)]]</td>
@@ -71,7 +100,7 @@ Copyright (c) 2017 Ilari Pihlajisto
                 </template>
                 <td>
                   <template is="dom-if" if="[[_canCancel(booking)]]">
-                    <paper-button raised on-tap="cancel" data-index$="[[index]]" data-db-id$="[[booking._id]]">[[localize('cancel')]]</paper-button>
+                    <paper-button raised on-tap="cancel" data-type="oneOff" data-index$="[[index]]" data-db-id$="[[booking._id]]">[[localize('cancel')]]</paper-button>
                   </template>
                 </td>
               </tr>
@@ -87,8 +116,9 @@ Copyright (c) 2017 Ilari Pihlajisto
       method="post"
       content-type="application/json"
       body="{{options}}"
-      handle-as="json"
-      last-response="{{bookings}}">
+      handle-as="text"
+      on-error="handleBookingsError"
+      on-response="handleBookingsResponse">
     </iron-ajax>
     <iron-ajax
       id="cancelAjax"
@@ -123,7 +153,8 @@ Copyright (c) 2017 Ilari Pihlajisto
             }
           },
           courts: Array,
-          bookings: Array
+          oneOffBookings: Array,
+          weeklyBookings: Array
         }, ConfigImpl.properties);
       }
 
@@ -163,6 +194,28 @@ Copyright (c) 2017 Ilari Pihlajisto
         return diff > court.cancellation_period;
       }
 
+      handleBookingsResponse(event) {
+        this.error = '';
+        const resp = JSON.parse(event.detail.response);
+
+        const oneOffBookings = [];
+        const weeklyBookings = [];
+        resp.forEach(booking => {
+          if (('weekday' in booking) && booking.weekday != -1) {
+            weeklyBookings.push(booking);
+          } else {
+            oneOffBookings.push(booking);
+          }
+        });
+        this.oneOffBookings = oneOffBookings;
+        this.weeklyBookings = weeklyBookings;
+      }
+
+      handleBookingsError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+
       cancel(event) {
         if (!confirm(this.localize('book_cancel_confirm'))) {
           return;
@@ -170,6 +223,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 
         var id = event.target.dataset.dbId;
         this.bookingToCancel = event.target.dataset.index;
+        this.cancelType = event.target.dataset.type;
         this.$.cancelAjax.body = {_id: id};
         this.$.cancelAjax.generateRequest();
       }
@@ -188,8 +242,13 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.error = '';
         this.success = 'cancel_success';
 
-        this.splice('bookings', this.bookingToCancel, 1);
+        if (this.cancelType == 'weekly') {
+          this.splice('weeklyBookings', this.bookingToCancel, 1);
+        } else if (this.cancelType == 'oneOff') {
+          this.splice('oneOffBookings', this.bookingToCancel, 1);
+        }
         this.bookingToCancel = null;
+        this.cancelType = null;
       }
 
       isVisible(booking) {

@@ -132,6 +132,7 @@
 		"delete_user_success": "Käyttäjä poistettiin onnistuneesti",
 		"last_day": "Viimeinen päivä",
 		"empty_value": "Arvo ei saa olla tyhjä",
-		"booked_by": "varauksen teki"
+		"booked_by": "varauksen teki",
+		"my_weekly_bookings": "Vakiovuorot"
 	}
 }
