@@ -99,10 +99,12 @@ Copyright (c) 2017 Ilari Pihlajisto
               <td><strong>[[localize('customer')]]</strong></td>
               <td>[[booking.title]] ([[localize('booked_by')]] <a href="/user/[[booking.username]]">[[booking.username]]</a>)</td>
             </tr>
-            <tr>
-              <td><strong>[[localize('paid_at')]]</strong></td>
-              <td>[[_parseMongoTime(booking.paid_at)]]</td>
-            </tr>
+            <template is="dom-if" if="[[booking.paid_at]]">
+              <tr>
+                <td><strong>[[localize('paid_at')]]</strong></td>
+                <td>[[_parseMongoTime(booking.paid_at)]]</td>
+              </tr>
+            </template>
             <tr>
               <td><strong>[[localize('payment_type')]]</strong></td>
               <td>
