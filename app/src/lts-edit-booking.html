@@ -92,6 +92,10 @@ Copyright (c) 2017 Ilari Pihlajisto
               </tr>
             </template>
             <tr>
+              <td><strong>[[localize('created_at')]]</strong></td>
+              <td>[[_parseMongoTime(booking.created_at)]]</td>
+            </tr>
+            <tr>
               <td><strong>[[localize('court')]]</strong></td>
               <td>[[_courtName(booking.court_id)]]</td>
             </tr>
