@@ -695,6 +695,19 @@ func bookingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 		}
 	}
 
+	if val, ok := m["booking_type"]; ok {
+		bookingType := val.(string)
+		if bookingType == "one-off" {
+			find["weekday"] = bson.M{"$in": []interface{}{
+				nil, false, -1,
+			}}
+		} else if bookingType == "weekly" {
+			find["weekday"] = bson.M{"$gte": 0}
+		} else {
+			return http.StatusBadRequest, errors.New("invalid booking_type")
+		}
+	}
+
 	fields := bson.M{
 		"_id":        1,
 		"court_id":   1,

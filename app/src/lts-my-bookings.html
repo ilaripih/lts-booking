@@ -110,15 +110,26 @@ Copyright (c) 2017 Ilari Pihlajisto
       </div>
     </div>
     <iron-ajax
-      id="bookingsAjax"
+      id="oneOffBookingsAjax"
       auto
       url="/api/bookings"
       method="post"
       content-type="application/json"
-      body="{{options}}"
+      body="{{oneOffOptions}}"
       handle-as="text"
       on-error="handleBookingsError"
-      on-response="handleBookingsResponse">
+      on-response="handleOneOffBookingsResponse">
+    </iron-ajax>
+    <iron-ajax
+      id="weeklyBookingsAjax"
+      auto
+      url="/api/bookings"
+      method="post"
+      content-type="application/json"
+      body="{{weeklyOptions}}"
+      handle-as="text"
+      on-error="handleBookingsError"
+      on-response="handleWeeklyBookingsResponse">
     </iron-ajax>
     <iron-ajax
       id="cancelAjax"
@@ -143,13 +154,24 @@ Copyright (c) 2017 Ilari Pihlajisto
             type: Boolean,
             value: false
           },
-          options: {
+          oneOffOptions: {
             type: Object,
             value: {
               date_begin: '2017-06-01',
               date_end: '2099-06-01',
               my_bookings: true,
-              sort_desc: true
+              sort_desc: true,
+              booking_type: 'one-off'
+            }
+          },
+          weeklyOptions: {
+            type: Object,
+            value: {
+              date_begin: '2017-06-01',
+              date_end: '2099-06-01',
+              my_bookings: true,
+              sort_desc: true,
+              booking_type: 'weekly'
             }
           },
           courts: Array,
@@ -166,7 +188,8 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       _routeChanged(route) {
         if (route.prefix == '/my-bookings' && route.path == '') {
-          this.$.bookingsAjax.generateRequest();
+          this.$.oneOffBookingsAjax.generateRequest();
+          this.$.weeklyBookingsAjax.generateRequest();
         }
       }
 
@@ -194,21 +217,14 @@ Copyright (c) 2017 Ilari Pihlajisto
         return diff > court.cancellation_period;
       }
 
-      handleBookingsResponse(event) {
+      handleOneOffBookingsResponse(event) {
         this.error = '';
-        const resp = JSON.parse(event.detail.response);
+        this.oneOffBookings = JSON.parse(event.detail.response);
+      }
 
-        const oneOffBookings = [];
-        const weeklyBookings = [];
-        resp.forEach(booking => {
-          if (('weekday' in booking) && booking.weekday != -1) {
-            weeklyBookings.push(booking);
-          } else {
-            oneOffBookings.push(booking);
-          }
-        });
-        this.oneOffBookings = oneOffBookings;
-        this.weeklyBookings = weeklyBookings;
+      handleWeeklyBookingsResponse(event) {
+        this.error = '';
+        this.weeklyBookings = JSON.parse(event.detail.response);
       }
 
       handleBookingsError(event) {
