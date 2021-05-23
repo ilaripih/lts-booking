@@ -135,6 +135,7 @@
 		"booked_by": "varauksen teki",
 		"my_weekly_bookings": "Vakiovuorot",
 		"admin_restricted": "Pääkäyttäjä asettaa",
-		"edit_user_details": "Muokkaa tietoja"
+		"edit_user_details": "Muokkaa tietoja",
+		"game_pass": "pelipassi"
 	}
 }
