@@ -39,6 +39,7 @@
 		"date": "Päivämäärä",
 		"time": "Aika",
 		"duration": "Kesto",
+		"duration_h": "Kesto (h)",
 		"book_court": "Varaa kohde",
 		"cancel": "Peruuta",
 		"booking_success": "Varaus tehtiin onnistuneesti",
@@ -136,6 +137,10 @@
 		"my_weekly_bookings": "Vakiovuorot",
 		"admin_restricted": "Pääkäyttäjä asettaa",
 		"edit_user_details": "Muokkaa tietoja",
-		"game_pass": "pelipassi"
+		"game_pass": "pelipassi",
+		"all_bookings": "Kaikki varaukset",
+		"begin_date": "Alkupäivä",
+		"end_date": "Loppupäivä",
+		"results": "tulosta"
 	}
 }

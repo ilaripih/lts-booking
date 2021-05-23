@@ -84,6 +84,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <a name="users" hidden="[[!isAdmin]]" href="/users">[[localize('users')]]</a>
           <a name="settings" hidden="[[!user]]" href="/settings/[[user.username]]">[[localize('my_settings')]]</a>
           <a name="my-bookings" hidden="[[!user]]" href="/my-bookings">[[localize('my_bookings')]]</a>
+          <a name="all-bookings" hidden="[[!isAdmin]]" href="/all-bookings">[[localize('all_bookings')]]</a>
           <a name="help" href="/help">[[localize('help')]]</a>
           <a name="login" hidden="[[user]]" href="/login">[[localize('login')]]</a>
           <a name="logout" hidden="[[!user]]" href="/logout">[[localize('logout')]]</a>
@@ -114,6 +115,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <lts-settings name="settings" route="{{subroute}}" isadmin="{{isAdmin}}" user="{{user}}"></lts-settings>
           <lts-user name="user" route="{{subroute}}" courts="{{courts}}"></lts-user>
           <lts-my-bookings name="my-bookings" route="{{subroute}}" isadmin="{{isAdmin}}" courts="{{courts}}"></lts-my-bookings>
+          <lts-all-bookings name="all-bookings" courts="{{courts}}"></lts-all-bookings>
           <lts-login name="login" user="{{user}}"></lts-login>
           <lts-change-password name="change-password"></lts-change-password>
           <lts-create-user name="create-user"></lts-create-user>

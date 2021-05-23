@@ -1,0 +1,243 @@
+<!--
+@license
+Copyright (c) 2017 Ilari Pihlajisto
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid-sorter.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid-filter.html">
+<link rel="import" href="../bower_components/vaadin-material-theme/vaadin-date-picker.html">
+<link rel="import" href="../bower_components/vaadin-date-picker/vaadin-date-picker.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="./config-behavior.html">
+
+<dom-module id="lts-all-bookings">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+
+      table {
+        border-collapse: collapse;
+      }
+
+      th, td {
+        padding: 0 8px;
+        text-align: left;
+        border: 1px solid grey;
+      }
+
+      tbody tr:nth-child(odd) {
+        background-color: #edf3fc;
+      }
+
+      vaadin-grid {
+        height: 70vh;
+      }
+
+      paper-button {
+        top: -4px;
+        color: white;
+        background-color: red;
+        height: 0.5em;
+        font-size: 0.8em;
+      }
+    </style>
+
+    <div class="card">
+      <div id="authenticated">
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error">[[localize(error)]]</p>
+        </template>
+        <template is="dom-if" if="[[success]]">
+          <p class="alert-success">[[localize(success)]]</p>
+        </template>
+
+        <h1>[[localize('bookings')]]</h1>
+
+        <vaadin-date-picker id="beginDate" i18n="[[_dateLocale(localize)]]" auto-validate label="[[localize('begin_date')]]" value="{{date_begin}}"></vaadin-date-picker>
+        <vaadin-date-picker id="endDate" i18n="[[_dateLocale(localize)]]" auto-validate label="[[localize('end_date')]]" value="{{date_end}}"></vaadin-date-picker>
+
+        <br />
+        <label>[[oneOffBookings.length]] [[localize('results')]]</label>
+
+        <vaadin-grid aria-label="[[localize('my_bookings')]]" items="[[oneOffBookings]]">
+          <vaadin-grid-column>
+            <template class="header">
+              <vaadin-grid-sorter path="begin">[[localize('time')]]</vaadin-grid-sorter>
+            </template>
+            <template><a href="/edit-booking/[[item._id]]">[[_bookingTimes(item, localize)]]</a></template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">
+              <vaadin-grid-sorter path="duration_disp">[[localize('duration_h')]]</vaadin-grid-sorter>
+            </template>
+            <template>[[item.duration_disp]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">
+              <vaadin-grid-sorter path="court_id_disp">[[localize('court')]]</vaadin-grid-sorter>
+              <vaadin-grid-filter path="court_id_disp"></vaadin-grid-filter>
+            </template>
+            <template>[[item.court_id_disp]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">
+              <vaadin-grid-sorter path="title">[[localize('customer')]]</vaadin-grid-sorter>
+              <vaadin-grid-filter path="title"></vaadin-grid-filter>
+            </template>
+            <template>[[item.title]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">
+              <vaadin-grid-sorter path="paid_at_disp">[[localize('paid_at')]]</vaadin-grid-sorter>
+              <vaadin-grid-filter path="paid_at_disp"></vaadin-grid-filter>
+            </template>
+            <template>[[item.paid_at_disp]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">
+              <vaadin-grid-sorter path="payment_type_disp">[[localize('payment_type')]]</vaadin-grid-sorter>
+              <vaadin-grid-filter path="payment_type_disp"></vaadin-grid-filter>
+            </template>
+            <template>[[item.payment_type_disp]]</template>
+          </vaadin-grid-column>
+        </vaadin-grid>
+      </div>
+    </div>
+    <iron-ajax
+      id="oneOffBookingsAjax"
+      auto
+      url="/api/bookings"
+      method="post"
+      content-type="application/json"
+      body="{{options}}"
+      handle-as="text"
+      on-error="handleBookingsError"
+      on-response="handleOneOffBookingsResponse">
+    </iron-ajax>
+  </template>
+
+  <script>
+    class LtsAllBookings extends Polymer.mixinBehaviors([ConfigBehavior], Polymer.Element) {
+      static get is() { return 'lts-all-bookings'; }
+
+      static get properties() {
+        return _.defaults({
+          error: String,
+          success: String,
+          date_begin: {
+            type: String,
+            value: LtsAllBookings._defaultBeginDate()
+          },
+          date_end: {
+            type: String,
+            value: LtsAllBookings._defaultEndDate()
+          },
+          options: {
+            type: Object,
+            computed: 'computeOptions(date_begin, date_end)'
+          },
+          courts: Array,
+          oneOffBookings: Array,
+        }, ConfigImpl.properties);
+      }
+
+      static get observers() {
+        return [
+          '_routeChanged(route)'
+        ];
+      }
+
+      static _defaultBeginDate() {
+        const d = new Date();
+        d.setMonth(d.getMonth() - 1);
+        return ConfigImpl._pickerDate(d);
+      }
+
+      static _defaultEndDate() {
+        const d = new Date();
+        return ConfigImpl._pickerDate(d);
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.$.beginDate.shadowRoot.querySelector('[part="clear-button"]').style.visibility = 'hidden';
+        this.$.endDate.shadowRoot.querySelector('[part="clear-button"]').style.visibility = 'hidden';
+      }
+
+      computeOptions(dateBegin, dateEnd) {
+        let ret = {
+          date_begin: dateBegin,
+          date_end: dateEnd,
+          my_bookings: false,
+          sort_desc: true,
+          booking_type: 'one-off'
+        };
+        return ret;
+      }
+
+      _routeChanged(route) {
+        if (route.prefix == '/my-bookings' && route.path == '') {
+          this.$.oneOffBookingsAjax.generateRequest();
+        }
+      }
+
+      _courtName(courtId) {
+        var court = _.find(this.courts, function(obj) {
+          return obj._id == courtId;
+        });
+        if (court) {
+          return court.name;
+        }
+        return '?';
+      }
+
+      _duration(booking) {
+        const d1 = new Date(booking.begin);
+        const d2 = new Date(booking.end);
+        return (d2 - d1) / 36e5;
+      }
+
+      _formatPaidAt(paidAt) {
+        if (!paidAt) {
+          return '';
+        }
+        return this._formatDate(paidAt);
+      }
+
+      handleOneOffBookingsResponse(event) {
+        this.error = '';
+        const data = JSON.parse(event.detail.response);
+        if (data === null) {
+          this.oneOffBookings = [];
+          return;
+        }
+
+        this.oneOffBookings = data.map(b => {
+          b.court_id_disp = this._courtName(b.court_id);
+          b.duration_disp = this._duration(b);
+          b.paid_at_disp = this._formatPaidAt(b.paid_at);
+          b.payment_type_disp = this.localize(b.payment_type);
+
+          return b;
+        });
+      }
+
+      handleBookingsError(event) {
+        this.success = '';
+        this.error = event.detail.request.xhr.response.trim();
+      }
+    }
+
+    window.customElements.define(LtsAllBookings.is, LtsAllBookings);
+  </script>
+</dom-module>
