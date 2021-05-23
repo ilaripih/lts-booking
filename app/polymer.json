@@ -12,6 +12,7 @@
     "src/lts-edit-booking.html",
     "src/lts-login.html",
     "src/lts-my-bookings.html",
+    "src/lts-all-bookings.html",
     "src/lts-settings.html",
     "src/lts-user.html",
     "src/lts-users.html",
