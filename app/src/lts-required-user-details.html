@@ -103,6 +103,7 @@ Copyright (c) 2017 Ilari Pihlajisto
             </paper-dropdown-menu>
           </div>
           <paper-toggle-button checked="{{unique}}">[[localize('unique_value')]]</paper-toggle-button>
+          <paper-toggle-button checked="{{restricted}}">[[localize('admin_restricted')]]</paper-toggle-button>
           <br />
           <paper-button raised class="custom green" on-tap="addField" disabled="[[addFieldDisabled]]">[[localize('add')]]</paper-button>
         </div>
@@ -119,7 +120,11 @@ Copyright (c) 2017 Ilari Pihlajisto
           </vaadin-grid-column>
           <vaadin-grid-column>
             <template class="header">[[localize('unique')]]</template>
-            <template>[[uniqueVal(item.unique)]]</template>
+            <template>[[formatBool(item.unique)]]</template>
+          </vaadin-grid-column>
+          <vaadin-grid-column>
+            <template class="header">[[localize('admin_restricted')]]</template>
+            <template>[[formatBool(item.restricted)]]</template>
           </vaadin-grid-column>
           <vaadin-grid-column flex-grow="2">
             <template class="header">[[localize('options')]]</template>
@@ -181,6 +186,7 @@ Copyright (c) 2017 Ilari Pihlajisto
           depField: Number,
           depOption: Number,
           unique: Boolean,
+          restricted: Boolean,
           fields: {
             type: Array,
             value: []
@@ -256,8 +262,8 @@ Copyright (c) 2017 Ilari Pihlajisto
         return this.fields[field - 1].options;
       }
 
-      uniqueVal(unique) {
-        if (unique) {
+      formatBool(val) {
+        if (val) {
           return this.localize('true');
         }
         return this.localize('false');
@@ -286,7 +292,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           name: this.newFieldName,
           type: this.newFieldType,
           options: [],
-          unique: this.unique
+          unique: this.unique,
+          restricted: this.restricted
         };
         if (this.newFieldType == 1) {
           val.options = this.newFieldOptions.split(',').map(function(item) {
@@ -310,6 +317,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.depField = -1;
         this.depOption = -1;
         this.unique = false;
+        this.restricted = false;
       }
 
       deleteField() {

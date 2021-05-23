@@ -82,7 +82,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <a name="calendar" href="/calendar">[[localize('calendar')]]</a>
           <a name="courts" hidden="[[!isAdmin]]" href="/courts">[[localize('courts')]]</a>
           <a name="users" hidden="[[!isAdmin]]" href="/users">[[localize('users')]]</a>
-          <a name="settings" hidden="[[!user]]" href="/settings">[[localize('my_settings')]]</a>
+          <a name="settings" hidden="[[!user]]" href="/settings/[[user.username]]">[[localize('my_settings')]]</a>
           <a name="my-bookings" hidden="[[!user]]" href="/my-bookings">[[localize('my_bookings')]]</a>
           <a name="help" href="/help">[[localize('help')]]</a>
           <a name="login" hidden="[[user]]" href="/login">[[localize('login')]]</a>
@@ -111,7 +111,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <lts-court name="court" route="{{subroute}}" courts="{{courts}}"></lts-court>
           <lts-book name="book" route="{{subroute}}" isadmin="{{isAdmin}}" courts="{{courts}}"></lts-book>
           <lts-edit-booking name="edit-booking" route="{{subroute}}" isadmin="{{isAdmin}}" courts="{{courts}}"></lts-edit-booking>
-          <lts-settings name="settings" user="{{user}}"></lts-settings>
+          <lts-settings name="settings" route="{{subroute}}" isadmin="{{isAdmin}}" user="{{user}}"></lts-settings>
           <lts-user name="user" route="{{subroute}}" courts="{{courts}}"></lts-user>
           <lts-my-bookings name="my-bookings" route="{{subroute}}" isadmin="{{isAdmin}}" courts="{{courts}}"></lts-my-bookings>
           <lts-login name="login" user="{{user}}"></lts-login>

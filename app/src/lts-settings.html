@@ -30,9 +30,18 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
     </style>
 
+    <app-route
+      route="{{route}}"
+      pattern="/:username"
+      data="{{routeData}}"></app-route>
     <div class="card">
       <div id="authenticated">
-        <h1>[[localize('my_settings')]]</h1>
+        <template is="dom-if" if="[[!isadmin]]">
+          <h1>[[localize('my_settings')]]</h1>
+        </template>
+        <template is="dom-if" if="[[isadmin]]">
+          <h1>[[routeData.username]]</h1>
+        </template>
 
         <template is="dom-if" if="[[error]]">
           <p class="alert-error">[[localize(error)]]</p>
@@ -107,6 +116,10 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       static get properties() {
         return _.defaults({
+          isadmin: {
+            type: Boolean,
+            value: false
+          },
           formData: {
             type: Object,
             value: {}
@@ -128,13 +141,13 @@ Copyright (c) 2017 Ilari Pihlajisto
 
       static get observers() {
         return [
-          '_userChanged(user)'
+          '_usernameChanged(routeData.username)'
         ];
       }
 
-      _userChanged(user) {
-        if (!user) {
-          this.formData = {};
+      _usernameChanged(username) {
+        this.formData = {};
+        if (this.fields) {
           this.fields = this.fields.map(function(field) {
             var ret = field;
             if (ret.type == 1) {
@@ -144,19 +157,17 @@ Copyright (c) 2017 Ilari Pihlajisto
             }
             return ret;
           });
-          return;
         }
 
+        this.$.userDetailsAjax.body = {
+          username: username
+        };
         this.$.userDetailsAjax.generateRequest();
-        this.set('formData.name', user.name);
-        this.set('formData.email', user.email);
-        this.set('formData.street_address', user.street_address);
-        this.set('formData.postal_code', user.postal_code);
-        this.set('formData.phone_number', user.phone_number);
       }
 
       _setReqBody() {
         this.$.saveAjax.body = this.formData;
+        this.$.saveAjax.body.username = this.routeData.username;
         if (!this.fields || this.fields.length == 0) {
           return;
         }
@@ -253,9 +264,18 @@ Copyright (c) 2017 Ilari Pihlajisto
       }
 
       handleUserDetailsResponse(event) {
-        this.custom = JSON.parse(event.detail.response).custom;
+        const user = JSON.parse(event.detail.response);
+        this.set('formData.name', user.name);
+        this.set('formData.email', user.email);
+        this.set('formData.street_address', user.street_address);
+        this.set('formData.postal_code', user.postal_code);
+        this.set('formData.phone_number', user.phone_number);
+        this.custom = user.custom;
 
         this.setCustomValues();
+
+        this.error = '';
+        this.success = '';
       }
 
       handleSettingsResponse(event) {

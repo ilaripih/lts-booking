@@ -133,6 +133,8 @@
 		"last_day": "Viimeinen päivä",
 		"empty_value": "Arvo ei saa olla tyhjä",
 		"booked_by": "varauksen teki",
-		"my_weekly_bookings": "Vakiovuorot"
+		"my_weekly_bookings": "Vakiovuorot",
+		"admin_restricted": "Pääkäyttäjä asettaa",
+		"edit_user_details": "Muokkaa tietoja"
 	}
 }

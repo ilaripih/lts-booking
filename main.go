@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -92,6 +93,7 @@ type CustomUserDetail struct {
 	Options    []string              `json:"options" bson:"options"`
 	Dependency *UserDetailDependency `json:"dependency" bson:"dependency"`
 	Unique     bool                  `json:"unique" bson:"unique"`
+	Restricted bool                  `json:"restricted"`
 }
 
 type Settings struct {
@@ -222,7 +224,7 @@ func myHandler(fn func(http.ResponseWriter, *http.Request, map[string]interface{
 	})
 }
 
-func getSettings() (*Settings, error) {
+func getSettings(isAdmin bool) (*Settings, error) {
 	s := mongo.Copy()
 	defer s.Close()
 	c := s.DB("").C("settings")
@@ -236,15 +238,26 @@ func getSettings() (*Settings, error) {
 		}
 	}
 
+	// Don't return restricted fields to non-admins
+	if !isAdmin {
+		var filtered []CustomUserDetail
+		for _, s := range settings.UserDetails {
+			if !s.Restricted {
+				filtered = append(filtered, s)
+			}
+		}
+		settings.UserDetails = filtered
+	}
+
 	return &settings, nil
 }
 
 func signupHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
-	settings, err := getSettings()
+	isAdmin := (sess.Values["level"] == "admin")
+	settings, err := getSettings(isAdmin)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	isAdmin := (sess.Values["level"] == "admin")
 	if !settings.OpenRegistration && !isAdmin {
 		return http.StatusBadRequest, errors.New("open_registration_disallowed")
 	}
@@ -363,7 +376,7 @@ func sessionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkUniqueField(username, key, value string) error {
-	settings, err := getSettings()
+	settings, err := getSettings(true)
 	if err != nil || len(settings.UserDetails) == 0 {
 		return nil
 	}
@@ -399,6 +412,37 @@ func checkUniqueField(username, key, value string) error {
 	return errors.New("value_not_unique")
 }
 
+func getRestrictedFields() (map[string]bool, error) {
+	settings, err := getSettings(true)
+	if err != nil {
+		return nil, err
+	}
+	if len(settings.UserDetails) == 0 {
+		return nil, nil
+	}
+
+	ret := make(map[string]bool)
+	for _, field := range settings.UserDetails {
+		ret[field.Name] = field.Restricted
+	}
+
+	return ret, nil
+}
+
+func addRestrictedFields(arr []interface{}, restricted map[string]bool, c *mgo.Collection, username string) ([]interface{}, error) {
+	var user User
+	if err := c.Find(bson.M{"username": username}).One(&user); err != nil {
+		return nil, err
+	}
+
+	for _, field := range user.Custom {
+		if restricted[field.Name] {
+			arr = append(arr, field)
+		}
+	}
+	return arr, nil
+}
+
 func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
 	name := m["name"].(string)
 	email := m["email"].(string)
@@ -406,12 +450,33 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 	postalCode := m["postal_code"].(string)
 	phoneNumber := m["phone_number"].(string)
 
-	sess.Values["name"] = name
-	sess.Values["email"] = email
-	sess.Values["street_address"] = streetAddress
-	sess.Values["postal_code"] = postalCode
-	sess.Values["phone_number"] = phoneNumber
-	sess.Save(r, w)
+	var restrictedFields map[string]bool
+	var err error
+	restrictedFields, err = getRestrictedFields()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	isAdmin := (sess.Values["level"] == "admin")
+
+	myUsername := sess.Values["username"].(string)
+	reqUsername, ok := m["username"].(string)
+	if !ok {
+		reqUsername = myUsername
+	}
+	if reqUsername == myUsername {
+		sess.Values["name"] = name
+		sess.Values["email"] = email
+		sess.Values["street_address"] = streetAddress
+		sess.Values["postal_code"] = postalCode
+		sess.Values["phone_number"] = phoneNumber
+		sess.Save(r, w)
+	} else if !isAdmin {
+		return http.StatusForbidden, errors.New("unauthorized")
+	}
+
+	s := mongo.Copy()
+	defer s.Close()
+	c := s.DB("").C("users")
 
 	updateObj := bson.M{
 		"name":           name,
@@ -421,23 +486,28 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request, m map[string]inte
 		"phone_number":   phoneNumber,
 	}
 	if val, ok := m["custom"]; ok {
-		customArr := m["custom"].([]interface{})
+		customArr := val.([]interface{})
 		for _, v := range customArr {
 			obj := v.(map[string]interface{})
 			objName := obj["name"].(string)
 			objVal := obj["value"].(string)
+			if !isAdmin && restrictedFields[objName] {
+				return http.StatusForbidden, fmt.Errorf("Only admin can set %q", objName)
+			}
 			if err := checkUniqueField(sess.Values["username"].(string), objName, objVal); err != nil {
 				return http.StatusBadRequest, err
 			}
 		}
-		updateObj["custom"] = val
+		if !isAdmin {
+			customArr, err = addRestrictedFields(customArr, restrictedFields, c, reqUsername)
+			if err != nil {
+				return http.StatusInternalServerError, err
+			}
+		}
+		updateObj["custom"] = customArr
 	}
 
-	s := mongo.Copy()
-	defer s.Close()
-	c := s.DB("").C("users")
-
-	if err := c.Update(bson.M{"username": sess.Values["username"]}, bson.M{"$set": updateObj}); err != nil {
+	if err = c.Update(bson.M{"username": reqUsername}, bson.M{"$set": updateObj}); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -814,7 +884,7 @@ func hasFullUserDetails(sess *sessions.Session) bool {
 		}
 	}
 
-	settings, err := getSettings()
+	settings, err := getSettings(false)
 	if err != nil || len(settings.UserDetails) == 0 {
 		return true
 	}
@@ -1216,7 +1286,7 @@ func usersCsvHandler(w http.ResponseWriter, r *http.Request, m map[string]interf
 	defer s.Close()
 	c := s.DB("").C("users")
 
-	settings, err := getSettings()
+	settings, err := getSettings(true)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -1282,8 +1352,19 @@ func userDetailsHandler(w http.ResponseWriter, r *http.Request, m map[string]int
 	defer s.Close()
 	c := s.DB("").C("users")
 
+	myUsername := sess.Values["username"]
+	reqUsername, ok := m["username"]
+	if !ok {
+		reqUsername = myUsername
+	} else {
+		isAdmin := (sess.Values["level"] == "admin")
+		if !isAdmin && reqUsername != myUsername {
+			return http.StatusForbidden, errors.New("unauthorized")
+		}
+	}
+
 	var user User
-	if err := c.Find(bson.M{"username": sess.Values["username"]}).One(&user); err != nil {
+	if err := c.Find(bson.M{"username": reqUsername}).One(&user); err != nil {
 		return http.StatusNotFound, err
 	}
 
@@ -1297,7 +1378,8 @@ func userDetailsHandler(w http.ResponseWriter, r *http.Request, m map[string]int
 }
 
 func settingsHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{}, sess *sessions.Session) (int, error) {
-	settings, err := getSettings()
+	isAdmin := (sess.Values["level"] == "admin")
+	settings, err := getSettings(isAdmin)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -1363,6 +1445,10 @@ func updateSettingsHandler(w http.ResponseWriter, r *http.Request, m map[string]
 
 	if val, ok := m["unique"]; ok {
 		obj["unique"] = val
+	}
+
+	if val, ok := m["restricted"]; ok {
+		obj["restricted"] = val
 	}
 
 	if _, err := c.Upsert(nil, bson.M{"$set": obj}); err != nil {

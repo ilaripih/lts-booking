@@ -79,6 +79,9 @@ Copyright (c) 2017 Ilari Pihlajisto
         </table>
 
         <div class="wrapper-btns">
+          <a tabindex="-1" href="/settings/[[user.username]]"">
+            <paper-button raised class="primary">[[localize('edit_user_details')]]</paper-button>
+          </a>
           <paper-button raised class="primary" on-tap="resetPassword">[[localize('reset_password')]]</paper-button>
           <paper-button raised class="primary red" on-tap="deleteUser">[[localize('delete_user')]]</paper-button>
         </div>
