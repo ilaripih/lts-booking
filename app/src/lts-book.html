@@ -15,6 +15,7 @@ Copyright (c) 2017 Ilari Pihlajisto
 <link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="./config-behavior.html">
 
 <dom-module id="lts-book">
@@ -110,11 +111,12 @@ Copyright (c) 2017 Ilari Pihlajisto
                 </td>
               </tr>
             </template>
-            <template is="dom-if" if="[[!isadmin]]">
-              <p>[[court.booking_text]]</p>
-            </template>
           </tbody>
         </table>
+        <template is="dom-if" if="[[!isadmin]]">
+          <p>[[court.booking_text]]</p>
+          <paper-textarea always-float-label label="[[localize('extra_info')]]" value="{{extraInfo}}"></paper-textarea>
+        </template>
 
         <div class="wrapper-btns">
           <paper-button raised class="primary" on-tap="postSave">[[localize('save')]]</paper-button>
@@ -175,7 +177,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           durationIndex: {
             type: Number,
             value: 0
-          }
+          },
+          extraInfo: String
         }, ConfigImpl.properties);
       }
 
@@ -196,6 +199,7 @@ Copyright (c) 2017 Ilari Pihlajisto
         this.durationOptions = [];
         this.title = '';
         this.recurring = false;
+        this.extraInfo = '';
 
         this.$.bookingsAjax.body = {
           date_begin: routeData.date,
@@ -286,7 +290,8 @@ Copyright (c) 2017 Ilari Pihlajisto
           date: this.routeData.date,
           time_begin: parseInt(this.routeData.time_begin),
           time_end: this.timeEnd,
-          recurring: this.recurring
+          recurring: this.recurring,
+          extra_info: this.extraInfo
         };
         if (this.title.length > 0) {
           data.title = this.title;

@@ -76,7 +76,7 @@ Copyright (c) 2017 Ilari Pihlajisto
             </template>
             <template><a href="/edit-booking/[[item._id]]">[[_bookingTimes(item, localize)]]</a></template>
           </vaadin-grid-column>
-          <vaadin-grid-column>
+          <vaadin-grid-column width="130px" flex-grow="0">
             <template class="header">
               <vaadin-grid-sorter path="duration_disp">[[localize('duration_h')]]</vaadin-grid-sorter>
             </template>
@@ -96,14 +96,14 @@ Copyright (c) 2017 Ilari Pihlajisto
             </template>
             <template>[[item.title]]</template>
           </vaadin-grid-column>
-          <vaadin-grid-column>
+          <vaadin-grid-column width="130px" flex-grow="0">
             <template class="header">
               <vaadin-grid-sorter path="paid_at_disp">[[localize('paid_at')]]</vaadin-grid-sorter>
               <vaadin-grid-filter path="paid_at_disp"></vaadin-grid-filter>
             </template>
             <template>[[item.paid_at_disp]]</template>
           </vaadin-grid-column>
-          <vaadin-grid-column>
+          <vaadin-grid-column  width="140px" flex-grow="0">
             <template class="header">
               <vaadin-grid-sorter path="payment_type_disp">[[localize('payment_type')]]</vaadin-grid-sorter>
               <vaadin-grid-filter path="payment_type_disp"></vaadin-grid-filter>

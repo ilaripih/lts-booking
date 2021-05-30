@@ -121,6 +121,10 @@ Copyright (c) 2017 Ilari Pihlajisto
                 </paper-radio-group>
               </td>
             </tr>
+            <tr>
+              <td><strong>[[localize('extra_info')]]</strong></td>
+              <td>[[booking.extra_info]]</td>
+            </tr>
           </tbody>
         </table>
 
@@ -178,7 +182,7 @@ Copyright (c) 2017 Ilari Pihlajisto
           isadmin: {
             type: Boolean,
             value: false
-          },
+          }
         }, ConfigImpl.properties);
       }
 

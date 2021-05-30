@@ -80,6 +80,7 @@ type Booking struct {
 	WeekDay       int            `bson:"weekday" json:"weekday"`
 	Parent        *bson.ObjectId `json:"parent" bson:"parent"`
 	Cancellations []Cancellation `json:"cancellations" bson:"cancellations"`
+	ExtraInfo     string         `json:"extra_info" bson:"extra_info"`
 }
 
 type UserDetailDependency struct {
@@ -985,6 +986,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	dateStr := m["date"].(string)
 	beginNum := int(m["time_begin"].(float64))
 	endNum := int(m["time_end"].(float64))
+	extraInfo := m["extra_info"].(string)
 
 	if !bson.IsObjectIdHex(courtIdStr) {
 		return http.StatusNotFound, errors.New("not_found")
@@ -1093,6 +1095,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 			"end":        end,
 			"created_at": &now,
 			"weekday":    dayOfWeek,
+			"extra_info": extraInfo,
 		}
 		var id bson.ObjectId
 		if cId != courtId {

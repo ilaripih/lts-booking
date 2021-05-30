@@ -141,6 +141,7 @@
 		"all_bookings": "Kaikki varaukset",
 		"begin_date": "Alkupäivä",
 		"end_date": "Loppupäivä",
-		"results": "tulosta"
+		"results": "tulosta",
+		"extra_info": "Lisätiedot"
 	}
 }
