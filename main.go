@@ -567,7 +567,7 @@ func courtsHandler(w http.ResponseWriter, r *http.Request, m map[string]interfac
 	c := s.DB("").C("courts")
 
 	var courts []Court
-	if err := c.Find(bson.M{}).All(&courts); err != nil {
+	if err := c.Find(bson.M{}).Sort("group", "name").All(&courts); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -986,7 +986,12 @@ func bookHandler(w http.ResponseWriter, r *http.Request, m map[string]interface{
 	dateStr := m["date"].(string)
 	beginNum := int(m["time_begin"].(float64))
 	endNum := int(m["time_end"].(float64))
-	extraInfo := m["extra_info"].(string)
+
+	var extraInfo string
+	extraInfoRaw, ok := m["extra_info"]
+	if ok {
+		extraInfo = extraInfoRaw.(string)
+	}
 
 	if !bson.IsObjectIdHex(courtIdStr) {
 		return http.StatusNotFound, errors.New("not_found")
@@ -1521,7 +1526,12 @@ func main() {
 		log.Panic("Unable to set IANA location:", err)
 	}
 
-	mongo, err = mgo.Dial("localhost/lts-booking")
+	mongoURI := os.Getenv("MONGO_URL")
+	if mongoURI == "" {
+		mongoURI = "localhost/lts-booking"
+	}
+	log.Printf("Connecting to MongoDB at %s", mongoURI)
+	mongo, err = mgo.Dial(mongoURI)
 	if err != nil {
 		log.Panic("Unable to establish MongoDB connection:", err)
 	}
